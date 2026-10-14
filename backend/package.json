@@ -1,0 +1,22 @@
+{
+  "name": "musiclab-backend",
+  "version": "1.0.0",
+  "description": "Music Lab backend — amdl job runner + catalog proxy",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/api.test.js",
+    "generate-token": "node scripts/generate-token.js",
+    "setup": "node scripts/setup.js"
+  },
+  "type": "module",
+  "dependencies": {
+    "express": "^4.21.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=22"
+  }
+}
