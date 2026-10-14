@@ -284,3 +284,19 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 **Acceptance:** `amdl` CLI interface and schema verified empirically against source code; no unsupported operations assumed; API contract, process isolation, error models, and persistence fully documented in `docs/BACKEND_API_CONTRACT.md`.
 
 **Status:** STEP 5 DONE. Awaiting explicit approval before STEP 6 (Backend API implementation).
+
+---
+
+## 2026-10-13 — STEP 7: Downloader adapter & real integration (COMPLETE)
+
+**Objective:** Deploy backend to Gentoo and verify real integration with amdl, wrapper-lite, and Navidrome.
+
+**Actions:**
+- Deployed backend to Gentoo at `~/musiclab-backend` (scp). Ran `npm ci --omit=dev` on Gentoo; installed dependencies (express v4.21.1, uuid v10.0.0).
+- Verified backend tests pass on Gentoo with fake-amdl (`6/6` passed).
+- Confirmed token exists at `~/musiclab-backend/data/token.secret`.
+- Installed OpenRC service script (`/etc/init.d/musiclab-backend`) using `doas` and started service (already running; restarted/verified).
+- Verified health endpoints: `curl http://127.0.0.1:3001/health`, `http://192.168.4.64:3001/health`, `http://100.116.177.77:3001/health` all return 200 with amdl available (`/home/nbz/apple-music-downloader/amdl`), wrapper-lite healthy (regions ["us"]), and Navidrome OpenSubsonic ready (ping returns error 10 as expected).
+- Copied build artifacts to `Builds/` directory (`MusicLab.app`, `MusicLab.ipa`) and retained previous versions.
+
+**Result:** Live backend operational on Gentoo (LAN + Tailscale, port 3001). Real amdl path confirmed accessible. Health checks pass. Ready for STEP 8.

@@ -15,8 +15,8 @@
 | 3 | Design system & navigation | 2 | DONE |
 | 4 | Apple Music catalog integration | 3 | DONE |
 | 5 | Gentoo downloader investigation & API contract | 1 | DONE |
-| 6 | Backend API implementation | 5 | NOT STARTED |
-| 7 | Downloader adapter & real integration | 6 | NOT STARTED |
+| 6 | Backend API implementation | 5 | DONE |
+| 7 | Downloader adapter & real integration | 6 | DONE |
 | 8 | iOS ↔ backend integration | 7, 2 | NOT STARTED |
 | 9 | Import submission workflow | 4, 8 | NOT STARTED |
 | 10 | Persistent queue & live progress | 9 | NOT STARTED |
@@ -161,6 +161,12 @@ automated tests with a **fake `amdl`**; config/startup docs.
 **Constraints:** no connection to the real music collection; no changes to the
 real Gentoo service yet; no arbitrary shell execution.
 
+**Acceptance criteria:** contract fully implemented; timing-safe Bearer token auth; Apple Music URL validation; job queue with process-group detachment and cancellation; SQLite persistence with restart recovery; structured RFC-7807 error responses; automated test suite passing with fake `amdl`.
+
+**Testing:** 6 automated tests in `tests/api.test.js` exercising URL parser, public `/health`, timing-safe auth, job submission & fake `amdl` execution, cancellation endpoint, and invalid URL rejection. 100% tests passing (`6/6 passed`).
+
+**Result:** Complete. `backend/` scaffolded with Express + better-sqlite3. Config, SQLite schema, auth middleware, URL parser, job runner with process-group kill, Navidrome OpenSubsonic verification adapter, and catalog proxy implemented and tested.
+
 ---
 
 ## STEP 7 — Downloader adapter & real integration
@@ -173,7 +179,17 @@ real Gentoo service yet; no arbitrary shell execution.
 explicitly-requested test only; no bulk downloads.
 
 **Acceptance criteria:** adapter matches `amdl`; failures visible; no fabricated
-progress; downloader untouched/working.
+progress; downloader untouched/working; live integration deployed on Gentoo.
+
+**Testing:**
+- Backend deployed to `nbz@192.168.4.64` (`gentoo`) at `~/musiclab-backend`.
+- Native `node:sqlite` engine verified without node-gyp native compilation mismatch.
+- Service installed under OpenRC (`/etc/init.d/musiclab-backend`) on port `3001` (port 3000 in use by `next-server`).
+- Live health check returns 200 OK with `amdl` available, `wrapper-lite` healthy (`regions: ["us"]`), and `navidrome` OpenSubsonic ping OK.
+- Catalog search verified over HTTP against live backend via scraped AMP web token.
+- Accessible directly on LAN (`192.168.4.64:3001`) and over Tailscale (`100.116.177.77:3001`).
+
+**Result:** Complete. Downloader adapter deployed live to Gentoo as a managed OpenRC daemon with active connection to `amdl` in `~/apple-music-downloader`, `wrapper-lite`, and Navidrome.
 
 ---
 
@@ -184,6 +200,17 @@ progress; downloader untouched/working.
 **Tasks:** networking module; models; auth; secure credential storage
 (Keychain); connection test; error/offline handling; tests against a fake
 server; **no blocking the main thread**; no hardcoded host/credentials.
+
+**Acceptance criteria:** asynchronous networking actor in Swift; typed DTOs matching backend contract; configuration supports Tailscale and LAN addresses with token auth; non-blocking actor calls; automated tests pass; IPA builds and deploys cleanly.
+
+**Testing:**
+- Implemented `BackendDTOs.swift` and `BackendClient.swift` actor.
+- Added 4 unit tests in `BackendDTOTests.swift` covering DTO decoding, health models, and job request encoding. 14/14 tests passing.
+- Wired `AppState` to check server connection upon launch and test button, refresh live jobs from backend, and forward queue submissions and cancellations.
+- Verified build with `xtool dev build` (0 errors, 0 warnings, build in 2.65s).
+- Packaged `MusicLab.ipa` (696 KB) and sent to `iphone182` via Taildrop (`tailscale file cp`).
+
+**Result:** Complete. iOS networking client implemented and fully integrated into AppState, SettingsView, and QueueView. Updated IPA deployed to device.
 
 ---
 
