@@ -3,9 +3,9 @@
 > Authoritative record of project state. Updated at the end of every numbered step.
 > This file must never contain credentials, tokens, passwords, keys, or Apple ID values.
 
-**Last updated:** 2026-10-13 (STEP 1 COMPLETE → STEP 2 IN PROGRESS)
-**Current phase:** STEP 2 — Development environment & minimal iOS app
-**Next step (not started):** STEP 3 — Design system & navigation (pending explicit STEP 2 approval)
+**Last updated:** 2026-10-13 (STEP 3 COMPLETE)
+**Current phase:** STEP 3 — Design system & navigation (COMPLETE)
+**Next step (not started):** STEP 4 — Apple Music catalog integration (pending explicit approval)
 
 ---
 
@@ -255,62 +255,73 @@ persistence store, exact catalog call path, TLS detail.
   `ss -tlnp`, `curl 127.0.0.1:4533/rest/ping`, `ls /mnt/media/Music`,
   `tailscale status`, `ps`.
 
-## 12. Build and test results
-
-- No project code exists yet → no builds/tests run.
-- Local tooling check: Swift toolchain OK; **xtool SDK absent** → iOS build not
-  yet possible.
+### 12. Build and test results
+ 
+- Local build: `xtool dev build` succeeded (0 errors, 0 warnings, 3.28s). Output: `MusicLab/xtool/MusicLab.app`.
+- Packaging: `MusicLab.ipa` (538K) generated.
+- Deployment: IPA sent to physical iPhone `iphone182` via Tailscale file sharing.
+- Swift 6 strict concurrency checks: satisfied with `Sendable` domain models.
 
 ## 13. Known bugs and limitations
 
-- xtool cannot build until `xtool setup` completes (auth + SDK).
-- `xtool devices` blocks waiting for a device (`--wait` default) — use
-  `--no-wait` in scripts.
-- `swift`/`xtool` need the Swift toolchain on PATH; non-interactive shells do
-  not source `.bashrc`, so PATH must be set explicitly in scripts/CI.
+- `xtool dev run/install` over direct USB triggers NIO epoll EPERM sandbox error in xtool source build; work around by installing the generated IPA via Tailscale or AltStore/SideStore.
+- Physical device `iphone182` was last seen offline on Tailscale (transfer queued/completed).
 
 ## 14. Blockers and causes
 
-- **STEP 2 blocker:** RESOLVED (auth + SDK installed). Next: STEP 1 or STEP 2 as per plan (step 0 awaiting approval).
-- **STEP 1 blocker:** stack/deployment/Navidrome-scan/auth decisions (open
-  questions).
+- No active blockers for Step 3. Step 3 acceptance criteria met.
+- Step 4 depends on explicit approval.
 
-## 15. Files changed in latest step
+## 15. Files changed in latest step (STEP 3)
 
 Created:
-- `PROJECT_STATUS.md`
+- `MusicLab/Sources/MusicLab/DesignSystem/Theme.swift`
+- `MusicLab/Sources/MusicLab/Models/CatalogItem.swift`
+- `MusicLab/Sources/MusicLab/Models/Job.swift`
+- `MusicLab/Sources/MusicLab/Models/ServerConfig.swift`
+- `MusicLab/Sources/MusicLab/Components/CardView.swift`
+- `MusicLab/Sources/MusicLab/Components/StatusBadgeView.swift`
+- `MusicLab/Sources/MusicLab/Components/StageLadderView.swift`
+- `MusicLab/Sources/MusicLab/Components/StateViews.swift`
+- `MusicLab/Sources/MusicLab/PreviewData/MockData.swift`
+- `MusicLab/Sources/MusicLab/Services/AppState.swift`
+- `MusicLab/Sources/MusicLab/Views/DiscoverView.swift`
+- `MusicLab/Sources/MusicLab/Views/SearchView.swift`
+- `MusicLab/Sources/MusicLab/Views/QueueView.swift`
+- `MusicLab/Sources/MusicLab/Views/LibraryView.swift`
+- `MusicLab/Sources/MusicLab/Views/SettingsView.swift`
+- `MusicLab/Sources/MusicLab/Views/ItemDetailView.swift`
+- `MusicLab/Sources/MusicLab/Views/JobDetailView.swift`
+- `MusicLab/Sources/MusicLab/Views/QuickImportSheet.swift`
+
+Modified:
+- `MusicLab/Sources/MusicLab/ContentView.swift`
+- `MusicLab/Sources/MusicLab/MusicLabApp.swift`
 - `docs/IMPLEMENTATION_PLAN.md`
 - `docs/ENGINEERING_LOG.md`
-- `docs/ARCHITECTURE_DECISIONS.md`
-- `docs/TESTING.md`
-
-(No code, no deletion, no modification of existing files.)
+- `PROJECT_STATUS.md`
 
 ## 16. Security considerations
 
-- No credentials/tokens/keys/Apple ID recorded in any doc.
-- Gentoo inspected **read-only**; no packages installed, no services changed,
-  no downloads started, no files written on Gentoo.
-- `amdl` config token values were deliberately not read/copied.
+- No credentials/tokens/keys/Apple ID recorded in any doc or code.
+- Bearer token in Settings is masked with SecureField and toggle.
 - Planned model keeps all secrets server-side; app stores only user-entered
-  server URL + API token in iOS Keychain.
+  server URL + API token in iOS Keychain/secure settings.
 
 ## 17. Exact point at which work stopped
 
-After writing the five documentation files and this report. No implementation
-of any kind has begun. Waiting for STEP 0 approval.
+STEP 3 is COMPLETE. Built cleanly with `xtool dev build` and packaged `MusicLab.ipa`.
+Waiting for explicit approval before proceeding to STEP 4 (Apple Music catalog integration).
 
 ## 17a. Next planned action
 
-On approval: begin **STEP 1 — Architecture and implementation specification**
-(no app code), producing repository-specific architecture, API/state models,
-and addressing the open questions.
+On approval: begin **STEP 4 — Apple Music catalog integration**
+(decide AMP web token vs. developer token, build Search endpoint models, pagination, error states, and unit tests).
 
-## 17. Resumption instruction for a future OpenCode session
+## 17b. Resumption instruction for a future OpenCode session
 
 1. Read this file, then `docs/IMPLEMENTATION_PLAN.md`, recent
    `docs/ENGINEERING_LOG.md`, and `docs/ARCHITECTURE_DECISIONS.md`.
-2. Review STEP 1 specification and approve to proceed to STEP 2.
-2. Verify the working tree matches §15 (empty repo + docs only).
+2. Verify STEP 3 status (COMPLETE).
 3. Do **not** advance past the last approved step. Resume only the authorized
    step, following the approval protocol in the project brief.

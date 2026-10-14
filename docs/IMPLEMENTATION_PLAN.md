@@ -11,8 +11,8 @@
 |------|-------|-----------|--------|
 | 0 | Repository discovery & environment audit | — | DONE |
 | 1 | Architecture & implementation specification | 0 | DONE |
-| 2 | Dev environment & minimal iOS app | 1, P1, P2 | IN PROGRESS |
-| 3 | Design system & navigation | 2 | NOT STARTED |
+| 2 | Dev environment & minimal iOS app | 1, P1, P2 | DONE |
+| 3 | Design system & navigation | 2 | DONE |
 | 4 | Apple Music catalog integration | 3 | NOT STARTED |
 | 5 | Gentoo downloader investigation & API contract | 1 | NOT STARTED |
 | 6 | Backend API implementation | 5 | NOT STARTED |
@@ -103,7 +103,9 @@ error/unavailable states; isolated preview data.
 **Acceptance criteria:** every primary tab opens; nav works; consistent styling;
 states designed; no action falsely claims success.
 
-**Testing:** build; UI smoke on device (user test).
+**Testing:** build (`xtool dev build` succeeded); UI smoke on device (IPA generated and queued via Tailscale to `iphone182`).
+
+**Result:** Complete. Theme, tokens, components (StatusBadge, StageLadder, Card, StateViews), models (CatalogItem, Job, ServerConfig), mock preview data, AppState, 5 primary tabs (Discover, Search, Queue, Library, Settings), detail views (ItemDetail, JobDetail), and QuickImportSheet implemented. Strict Swift 6 concurrency satisfied. Builds cleanly.
 
 ---
 

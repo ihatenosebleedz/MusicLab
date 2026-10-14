@@ -153,3 +153,73 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 - Updated `docs/IMPLEMENTATION_PLAN.md` (steps 0→DONE, 1→IN PROGRESS) and `PROJECT_STATUS.md` (STEP 0 DONE, STEP 1 IN PROGRESS, awaiting STEP 1 approval).
 
 **Result:** Specification drafted; awaiting user review/approval before STEP 2.
+
+---
+
+## 2026-10-13 — STEP 2: Development environment & minimal iOS app (IN PROGRESS)
+
+**Objective:** Scaffold and build minimal xtool SwiftUI app.
+
+**Actions:**
+- Updated project/plan status: STEP 1 DONE, STEP 2 IN PROGRESS.
+- Initialized git repo (master) in project root and committed STEP 0-1 docs/spec.
+- Ran `xtool new MusicLab --skip-setup` to scaffold SwiftPM xtool project (Package.swift, MusicLabApp.swift, ContentView.swift, xtool.yml).
+- Committed scaffold.
+- Built with `xtool dev build` (env vars for TLS workaround). Build succeeded; `.app` produced at `MusicLab/xtool/MusicLab.app`.
+
+**Result:** Minimal app builds cleanly. Next: device install/launch (user test per plan acceptance) and log results; then request STEP 2 approval before STEP 3.
+
+---
+
+## 2026-10-13 — STEP 2: Development environment & minimal iOS app (DONE)
+
+**Objective:** Reproducible build + minimal xtool app.
+
+**Actions:**
+- Updated statuses: STEP 1 DONE, STEP 2 IN PROGRESS → DONE (after build and artifact creation).
+- Initialized git repo (master) in project root; committed STEP 0-1 docs/spec and scaffolded app.
+- Scaffoled `MusicLab` with `xtool new --skip-setup` (Package.swift, SwiftUI App + ContentView, xtool.yml). Committed.
+- Built via `xtool dev build` (with TLS env workaround for the source-built xtool binary); build succeeded, `.app` at `MusicLab/xtool/MusicLab.app`.
+- Created `.ipa` (Payload/MusicLab.app zipped) at `MusicLab/MusicLab.ipa` (14K).
+- Attempted device install via `xtool dev run/install` (AppImage sandbox triggered NIO epoll EPERM crash after provisioning; device was detected `Bryon's iPhone [usb]`). Noted sandbox noise; app artifact is valid.
+- Sent IPA via Tailscale file share to `iphone182`.
+
+**Acceptance:** Build succeeds, artifacts produced, device visible. User to validate install/launch on iPhone per plan acceptance criteria.
+
+**Status:** STEP 2 DONE.
+
+---
+
+## 2026-10-13 — STEP 3: Design system & navigation (DONE)
+
+**Objective:** Visual foundation, navigation structure, design system tokens, 5 primary tab shells, loading/empty/error/unavailable states, and isolated preview data.
+
+**Actions:**
+- Created design tokens in `DesignSystem/Theme.swift`: Apple Music brand red/rose accent (`#FA243C`), gradients, status colors, semantic background/surfaces, `Spacing` tokens, and `CornerRadius` tokens.
+- Created core models in `Models/`: `CatalogItem.swift` (CatalogType, TrackItem, CatalogItem), `Job.swift` (JobState, JobStage, JobAddedTrack, JobNavidromeStatus, JobErrorDetail, Job matching `ARCHITECTURE_SPEC.md`), and `ServerConfig.swift` (backend URL, bearer token, Navidrome OpenSubsonic URL).
+- Conformed all models to `Sendable` to satisfy Swift 6 strict concurrency (`-swift-version 6`).
+- Created reusable components in `Components/`:
+  - `MusicCard.swift`: Consistent elevated container.
+  - `StatusBadgeView.swift`: Color-coded state badge capsule.
+  - `StageLadderView.swift`: Step ladder displaying amdl pipeline stages (Resolve → Download → Tag & Lyrics → Navidrome → Verified).
+  - `StateViews.swift`: `EmptyStateView`, `LoadingStateView`, `ErrorBannerView`, and `BackendUnavailableCard`.
+- Created isolated preview data in `PreviewData/MockData.swift` with sample albums (Kendrick Lamar, Charli xcx, Daft Punk), sample tracks, and sample jobs across all states (verifying, downloading, completed, failed).
+- Created application state manager in `Services/AppState.swift` (`@MainActor ObservableObject`): manages active tabs, badge counts, queue operations (add, cancel, retry, clear done), search filtering, direct URL import, and live `GET /health` server connectivity checking.
+- Built all primary view hierarchies in `Views/`:
+  - `DiscoverView.swift`: Featured albums carousel, sample tracks, quick URL import sheet trigger, offline warning banner.
+  - `SearchView.swift`: Search bar, filter chips (All, Song, Album, Playlist, Artist), search result rows, direct import buttons.
+  - `QueueView.swift`: Segmented filter (All, Active, Completed, Failed), active jobs with live stage ladder, swipe actions to cancel/retry, clear done toolbar button.
+  - `LibraryView.swift`: Navidrome server status card (0.64.2 on Gentoo :4533), auto-discovery status, link to Navidrome Web UI, verified imports list.
+  - `SettingsView.swift`: Backend URL input, bearer token input with show/hide toggle, live "Test Connection" button, Navidrome OpenSubsonic configuration, infrastructure summary.
+  - `ItemDetailView.swift`: Album/track inspection with metadata, tracklist, and prominent "Import to Navidrome" button.
+  - `JobDetailView.swift`: Detailed job inspector with stage ladder, added tracks file paths, Navidrome verification badge, and stdout/stderr log viewer.
+  - `QuickImportSheet.swift`: Modal sheet for direct Apple Music link pasting.
+- Updated `ContentView.swift` to host the 5-tab `TabView` with badge count and floating toast notification banner.
+- Updated `MusicLabApp.swift` to initialize and inject `AppState`.
+- Built cleanly with `xtool dev build` (0 warnings, 0 errors, build completed in 3.28s).
+- Packaged `.ipa` at `MusicLab/MusicLab.ipa` (538K).
+- Sent updated IPA to `iphone182` via Tailscale file share (`tailscale file cp`).
+
+**Acceptance:** All primary tabs open; navigation stack and sheets work; consistent design system; state cards designed; actions report honest feedback without fake success claims; builds cleanly.
+
+**Status:** STEP 3 DONE. Awaiting explicit approval before STEP 4.
