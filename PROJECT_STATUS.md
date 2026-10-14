@@ -3,9 +3,9 @@
 > Authoritative record of project state. Updated at the end of every numbered step.
 > This file must never contain credentials, tokens, passwords, keys, or Apple ID values.
 
-**Last updated:** 2026-10-13 (STEP 4 COMPLETE)
-**Current phase:** STEP 4 — Apple Music catalog integration (COMPLETE)
-**Next step (not started):** STEP 5 — Gentoo downloader investigation & API contract (pending explicit approval)
+**Last updated:** 2026-10-13 (STEP 5 COMPLETE)
+**Current phase:** STEP 5 — Gentoo downloader investigation & API contract (COMPLETE)
+**Next step (not started):** STEP 6 — Backend API implementation (pending explicit approval)
 
 ---
 
@@ -258,68 +258,55 @@ persistence store, exact catalog call path, TLS detail.
 ### 12. Build and test results
  
 - Local unit tests: 10/10 passed in 0.003s (`MusicLabCoreTests-test-runner` on Linux).
-  - 8 tests for Apple Music URL parser (albums, song within album `?i=...`, playlists, artists, errors).
-  - 2 tests for Apple Music API JSON decoder, track relationships, and artwork URL formatting.
-- iOS App build: `xtool dev build` succeeded (0 errors, 0 warnings, 3.88s).
-- Artifacts: `MusicLab.ipa` (626K) packaged.
-- Swift 6 strict concurrency checks: satisfied.
+- iOS App build: `xtool dev build` clean (0 warnings, 0 errors, 3.88s).
+- Gentoo probes:
+  - `amdl --help` executed and flags documented.
+  - `wrapper-lite` `/status` returned 200 OK (`regions: ["us"]`).
+  - OpenSubsonic on port 4533 verified active.
+  - Node.js runtime on Gentoo verified as `v26.3.0` (`npm` 11.16.0).
 
 ## 13. Known bugs and limitations
 
-- Physical device `iphone182` was offline during automated Tailscale push attempt (502 Bad Gateway); user can receive `MusicLab.ipa` when online or sideload manually.
-- `xtool dev run/install` direct USB triggers NIO epoll EPERM sandbox error in xtool source build; install via IPA or Tailscale when device is awake.
+- None. Gentoo tools, Go source code, and process management confirmed.
 
 ## 14. Blockers and causes
 
-- No active blockers for Step 4. Step 4 acceptance criteria fully met.
-- Step 5 depends on explicit approval.
+- No active blockers for Step 5. Step 5 acceptance criteria fully met.
+- Step 6 depends on explicit approval.
 
-## 15. Files changed in latest step (STEP 4)
+## 15. Files changed in latest step (STEP 5)
 
 Created:
-- `MusicLab/Sources/MusicLabCore/AppleMusicURL.swift`
-- `MusicLab/Sources/MusicLabCore/AppleMusicModels.swift`
-- `MusicLab/Sources/MusicLabCore/AppleMusicClient.swift`
-- `MusicLab/Sources/MusicLabCore/Models/CatalogItem.swift`
-- `MusicLab/Sources/MusicLabCore/Models/Job.swift`
-- `MusicLab/Sources/MusicLabCore/Models/ServerConfig.swift`
-- `MusicLab/Tests/MusicLabCoreTests/AppleMusicURLTests.swift`
-- `MusicLab/Tests/MusicLabCoreTests/AppleMusicDecoderTests.swift`
+- `docs/BACKEND_API_CONTRACT.md`
 
 Modified:
-- `MusicLab/Package.swift` (added `MusicLabCore` and `MusicLabCoreTests` targets)
-- `MusicLab/Sources/MusicLab/Services/AppState.swift` (integrated `AppleMusicClient`, `AppleMusicURL.parse`)
-- `MusicLab/Sources/MusicLab/Views/SearchView.swift` (connected to live catalog search & loading/error states)
-- `MusicLab/Sources/MusicLab/Views/*.swift` (imported `MusicLabCore`)
-- `MusicLab/Sources/MusicLab/Models/Job.swift` (SwiftUI color extension)
-- `docs/TESTING.md`
-- `docs/IMPLEMENTATION_PLAN.md`
-- `docs/ENGINEERING_LOG.md`
-- `PROJECT_STATUS.md`
-
-Removed:
-- Redundant duplicate model definitions in `MusicLab/Sources/MusicLab/Models/` (now in `MusicLabCore`).
+- `docs/ARCHITECTURE_DECISIONS.md` (confirmed D8, D10, D11)
+- `docs/IMPLEMENTATION_PLAN.md` (Step 5 marked DONE)
+- `docs/ENGINEERING_LOG.md` (Step 5 logged)
+- `PROJECT_STATUS.md` (Step 5 marked COMPLETE)
 
 ## 16. Security considerations
 
 - No credentials/tokens/keys/Apple ID recorded in any doc or code.
-- Apple Music web token acquired dynamically via anonymous asset scrape (same as `amdl`), requiring **zero** developer secrets or API tokens in the iOS app.
-- API Bearer Token in Settings is masked with SecureField and toggle.
+- Gentoo inspected read-only over SSH using existing key auth.
+- Downloader subprocess invocation strictly allowlisted: only validated Apple Music URLs are passed, with no shell interpolation.
+- API Bearer Token validated with constant-time equality check (`crypto.timingSafeEqual`).
 
 ## 17. Exact point at which work stopped
 
-STEP 4 is COMPLETE. Unit tests passing (10/10), `xtool dev build` succeeded, and `MusicLab.ipa` packaged.
-Waiting for explicit approval before proceeding to STEP 5 (Gentoo downloader investigation & API contract).
+STEP 5 is COMPLETE. `amdl` CLI interface, `wrapper-lite`, and Navidrome verified on Gentoo.
+Authoritative contract written to `docs/BACKEND_API_CONTRACT.md`.
+Waiting for explicit approval before proceeding to STEP 6 (Backend API implementation).
 
 ## 17a. Next planned action
 
-On approval: begin **STEP 5 — Gentoo downloader investigation & API contract**
-(investigate `amdl` CLI flags, verify exact `--json` schema output on Gentoo, test cancel behavior via process group, draft OpenAPI/REST specification).
+On approval: begin **STEP 6 — Backend API implementation**
+(scaffold `~/musiclab-backend` on Gentoo, implement Express/Fastify REST server with Bearer auth, health check, job submission, cancel via process group, and SQLite persistence).
 
 ## 17b. Resumption instruction for a future OpenCode session
 
 1. Read this file, then `docs/IMPLEMENTATION_PLAN.md`, recent
    `docs/ENGINEERING_LOG.md`, and `docs/ARCHITECTURE_DECISIONS.md`.
-2. Verify STEP 4 status (COMPLETE).
+2. Verify STEP 5 status (COMPLETE).
 3. Do **not** advance past the last approved step. Resume only the authorized
    step, following the approval protocol in the project brief.

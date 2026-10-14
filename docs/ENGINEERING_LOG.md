@@ -249,4 +249,38 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 
 **Acceptance:** Real catalog models and decoder implemented; URL parsing handles full matrix of Apple Music link styles and errors gracefully; zero API secrets in the app; 10 Linux unit tests pass; builds cleanly for iOS.
 
-**Status:** STEP 4 DONE. Awaiting explicit approval before STEP 5.
+**Status:** STEP 4 DONE.
+
+---
+
+## 2026-10-13 — STEP 5: Gentoo downloader investigation & API contract (DONE)
+
+**Objective:** Inspect real `amdl` CLI flags and output formats on Gentoo, verify `wrapper-lite` and OpenSubsonic integrations, and freeze the backend REST API contract.
+
+**Actions:**
+- Ran `./amdl --help` on Gentoo (`192.168.4.64`):
+  - Confirmed URL argument is **positional**: `amdl [options] [url1 url2 ...]` (there is no `--url` flag).
+  - Confirmed `--json` flag outputs summary JSON at the end of the run.
+  - Confirmed `--lite-server` flag points to `http://127.0.0.1:12340`.
+- Inspected Go source code in `~/apple-music-downloader/`:
+  - `internal/app/run.go`: Verified URL routing for `/album/` (supports `?i=` for single track rip), `/song/`, `/playlist/`, `/artist/`, and `/music-video/`.
+  - Confirmed `AddedTrack` struct schema: `path`, `artist`, `artist_id`, `album`, `song`. (Critical finding: track title is represented as `"song"`, not `"title"`).
+  - Confirmed error behavior: when `exit-on-error: true` is configured in `config.yaml`, errors call `os.Exit(1)` immediately without blocking on stdin.
+- Inspected `wrapper-lite` DRM daemon on Gentoo:
+  - Verified `curl -s http://127.0.0.1:12340/status` returns `{"code":0,"msg":"SUCCESS","data":{"regions":["us"]}}`.
+- Inspected Navidrome OpenSubsonic service on Gentoo:
+  - Verified OpenSubsonic ping on port 4533: Navidrome 0.64.2 responds with OpenSubsonic error 10 (missing auth), confirming API readiness.
+- Audited Gentoo runtime environment:
+  - Confirmed Node.js **v26.3.0** and npm **11.16.0** are present under user `nbz`.
+- Created authoritative specification document [`docs/BACKEND_API_CONTRACT.md`](file:///home/nbz/Projects/apple-music-ios-downloader/docs/BACKEND_API_CONTRACT.md):
+  - Documented base URL and binding (`0.0.0.0:3000`).
+  - Documented Bearer authentication with `crypto.timingSafeEqual` constant-time comparison.
+  - Defined all REST endpoints (`GET /health`, `GET /catalog/search`, `POST /jobs`, `GET /jobs`, `GET /jobs/:id`, `POST /jobs/:id/cancel`).
+  - Documented process-group detachment (`{ detached: true }`) and cancellation (`process.kill(-pid, 'SIGTERM')`).
+  - Documented Navidrome verification polling algorithm with exponential backoff (no scan triggers).
+  - Defined SQLite persistence schema (`jobs` and `job_tracks` tables) and server restart recovery rules.
+- Updated `docs/ARCHITECTURE_DECISIONS.md` confirming D8, D10, and D11.
+
+**Acceptance:** `amdl` CLI interface and schema verified empirically against source code; no unsupported operations assumed; API contract, process isolation, error models, and persistence fully documented in `docs/BACKEND_API_CONTRACT.md`.
+
+**Status:** STEP 5 DONE. Awaiting explicit approval before STEP 6 (Backend API implementation).

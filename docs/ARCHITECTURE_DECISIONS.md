@@ -140,7 +140,7 @@
   prior art; the app only needs a coarse subset).
 - **Persistence:** a small embedded store (SQLite or JSON file) on Gentoo so
   jobs survive backend restarts.
-- **Status:** PROVISIONAL (STEP 1/6).
+- **Status:** CONFIRMED (STEP 5: SQLite `data/jobs.db` with `jobs` and `job_tracks` tables).
 
 ---
 
@@ -154,10 +154,21 @@
 
 ## D10. iOS project layout
 
-- **Proposed:** xtool SwiftPM project with a UI target and a platform-agnostic
-  core module (models/networking) so the core can be unit-tested on Linux with
-  `swift test`, mirroring the sibling `NaviCore` pattern.
-- **Status:** PROVISIONAL (STEP 1/2).
+- **Choice:** xtool SwiftPM project with `MusicLab` app target depending on
+  pure-Foundation `MusicLabCore` target. Enables Linux unit testing (`MusicLabCoreTests`)
+  via `swift build --target MusicLabCoreTests-test-runner` with 0 warnings.
+- **Status:** CONFIRMED (implemented in STEP 3 & 4).
+
+---
+
+## D11. `amdl` CLI invocation & output contract
+
+- **Finding (STEP 5):** `amdl` accepts positional URLs: `./amdl --json <url>`
+  (there is no `--url` flag).
+- **Format:** Outputs JSON array of `AddedTrack` on the last line of stdout on exit 0.
+- **Fields:** `path`, `artist`, `artist_id`, `album`, `song` (`song` maps to track title).
+- **Process management:** Spawn with `{ detached: true }` and kill `-pid` (process group) on cancel.
+- **Status:** CONFIRMED (empirically verified against `amdl` Go source on Gentoo).
 
 ---
 

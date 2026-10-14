@@ -14,7 +14,7 @@
 | 2 | Dev environment & minimal iOS app | 1, P1, P2 | DONE |
 | 3 | Design system & navigation | 2 | DONE |
 | 4 | Apple Music catalog integration | 3 | DONE |
-| 5 | Gentoo downloader investigation & API contract | 1 | NOT STARTED |
+| 5 | Gentoo downloader investigation & API contract | 1 | DONE |
 | 6 | Backend API implementation | 5 | NOT STARTED |
 | 7 | Downloader adapter & real integration | 6 | NOT STARTED |
 | 8 | iOS ↔ backend integration | 7, 2 | NOT STARTED |
@@ -143,6 +143,10 @@ deployment + rollback doc.
 
 **Acceptance criteria:** interface matches real `amdl`; unsupported ops named;
 security/ops documented; **contract approved before implementation**.
+
+**Testing:** Empirical inspection of `amdl` Go source on Gentoo (`run.go`, `app.go`, `config.yaml`); `wrapper-lite` `/status` probe; OpenSubsonic ping probe; contract documented in `docs/BACKEND_API_CONTRACT.md`.
+
+**Result:** Complete. `docs/BACKEND_API_CONTRACT.md` created with frozen REST specification, process-group management, `AddedTrack` schema mapping (`song` -> `title`), Navidrome polling algorithm, and SQLite persistence schema.
 
 ---
 
