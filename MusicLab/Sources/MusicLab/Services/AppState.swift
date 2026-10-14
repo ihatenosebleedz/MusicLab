@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import MusicLabCore
 
 public enum AppTab: Int, CaseIterable, Identifiable {
     case discover = 0
@@ -45,11 +46,14 @@ public final class AppState: ObservableObject {
     @Published public var selectedCatalogFilter: CatalogType? = nil
     @Published public var searchResults: [CatalogItem] = MockData.sampleAlbums + MockData.sampleSongs
     @Published public var isSearching: Bool = false
+    @Published public var searchErrorMessage: String? = nil
     
     // Quick import sheet
     @Published public var isShowingQuickImport: Bool = false
     @Published public var quickImportUrl: String = ""
     @Published public var importFeedbackToast: String? = nil
+    
+    private let musicClient = AppleMusicClient()
     
     public init() {
         // Load saved settings if any
@@ -77,23 +81,86 @@ public final class AppState: ObservableObject {
     }
     
     public func submitUrlImport(url: String) {
-        guard !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        let cleanUrl = url.trimmingCharacters(in: .whitespacesAndNewlines)
-        let newJob = Job(
-            id: "job-\(Int.random(in: 1000...9999))",
-            type: cleanUrl.contains("/album/") ? "album" : "song",
-            url: cleanUrl,
-            name: "Direct Import: \(cleanUrl.split(separator: "/").last ?? "item")",
-            state: .queued,
-            stage: .resolving,
-            progressHint: "Enqueued from direct URL",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        jobs.insert(newJob, at: 0)
-        quickImportUrl = ""
-        isShowingQuickImport = false
-        showToast("URL submitted to queue")
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        
+        do {
+            let parsed = try AppleMusicURL.parse(trimmed)
+            let typeName = parsed.effectiveResourceType.rawValue
+            let label = parsed.slug?.replacingOccurrences(of: "-", with: " ").capitalized ?? "Item \(parsed.effectiveIdentifier)"
+            
+            let newJob = Job(
+                id: "job-\(Int.random(in: 1000...9999))",
+                type: typeName,
+                url: parsed.originalURL.absoluteString,
+                name: "\(typeName.capitalized): \(label)",
+                state: .queued,
+                stage: .resolving,
+                progressHint: "Enqueued via validated URL (\(parsed.storefront))",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            jobs.insert(newJob, at: 0)
+            quickImportUrl = ""
+            isShowingQuickImport = false
+            showToast("Added validated \(typeName) to queue")
+        } catch let urlError as AppleMusicURLError {
+            showToast("Error: \(urlError.localizedDescription)")
+        } catch {
+            showToast("Invalid Apple Music URL: \(error.localizedDescription)")
+        }
+    }
+    
+    public func performSearch(query: String, filter: CatalogType? = nil) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            searchResults = MockData.sampleAlbums + MockData.sampleSongs
+            searchErrorMessage = nil
+            return
+        }
+        
+        isSearching = true
+        searchErrorMessage = nil
+        
+        Task {
+            #if !os(Linux)
+            do {
+                let types: [AppleMusicResourceType]
+                if let filter = filter {
+                    switch filter {
+                    case .song: types = [.song]
+                    case .album: types = [.album]
+                    case .playlist: types = [.playlist]
+                    case .artist: types = [.artist]
+                    }
+                } else {
+                    types = [.album, .song, .playlist]
+                }
+                
+                let results = try await musicClient.search(query: trimmed, types: types)
+                self.searchResults = results
+                self.isSearching = false
+            } catch {
+                // If direct network fails, fallback to filtered mock dataset
+                let allItems = MockData.sampleAlbums + MockData.sampleSongs
+                let lower = trimmed.lowercased()
+                let filtered = allItems.filter {
+                    $0.title.lowercased().contains(lower) || $0.artistName.lowercased().contains(lower)
+                }
+                self.searchResults = filtered
+                self.searchErrorMessage = "Live catalog lookup unavailable (\(error.localizedDescription)); showing local suggestions"
+                self.isSearching = false
+            }
+            #else
+            let allItems = MockData.sampleAlbums + MockData.sampleSongs
+            let lower = trimmed.lowercased()
+            let filtered = allItems.filter {
+                $0.title.lowercased().contains(lower) || $0.artistName.lowercased().contains(lower)
+            }
+            self.searchResults = filtered
+            self.isSearching = false
+            #endif
+        }
     }
     
     public func cancelJob(id: String) {

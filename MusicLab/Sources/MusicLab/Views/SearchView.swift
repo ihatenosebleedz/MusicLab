@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct SearchView: View {
     @EnvironmentObject private var appState: AppState
@@ -7,22 +8,11 @@ public struct SearchView: View {
     
     public init() {}
     
-    private var filteredResults: [CatalogItem] {
-        let allItems = MockData.sampleAlbums + MockData.sampleSongs
-        var results = allItems
-        
+    private var displayedResults: [CatalogItem] {
+        var results = appState.searchResults
         if let filter = selectedFilter {
             results = results.filter { $0.type == filter }
         }
-        
-        if !searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            let query = searchText.lowercased()
-            results = results.filter {
-                $0.title.lowercased().contains(query) ||
-                $0.artistName.lowercased().contains(query)
-            }
-        }
-        
         return results
     }
     
@@ -37,6 +27,7 @@ public struct SearchView: View {
                             isSelected: selectedFilter == nil
                         ) {
                             selectedFilter = nil
+                            appState.performSearch(query: searchText, filter: nil)
                         }
                         
                         ForEach(CatalogType.allCases) { type in
@@ -45,6 +36,7 @@ public struct SearchView: View {
                                 isSelected: selectedFilter == type
                             ) {
                                 selectedFilter = type
+                                appState.performSearch(query: searchText, filter: type)
                             }
                         }
                     }
@@ -54,13 +46,15 @@ public struct SearchView: View {
                 .background(Theme.background)
                 
                 // Content area
-                if searchText.isEmpty && selectedFilter == nil {
+                if appState.isSearching {
+                    LoadingStateView(message: "Searching Apple Music Catalog...")
+                } else if searchText.isEmpty && selectedFilter == nil {
                     EmptyStateView(
                         iconName: "magnifyingglass",
                         title: "Search Apple Music",
-                        message: "Search for songs, albums, and artists. Submissions will be downloaded to Navidrome."
+                        message: "Search for songs, albums, and playlists. Submissions will be downloaded to Navidrome."
                     )
-                } else if filteredResults.isEmpty {
+                } else if displayedResults.isEmpty {
                     EmptyStateView(
                         iconName: "music.note.slash",
                         title: "No Results Found",
@@ -68,7 +62,13 @@ public struct SearchView: View {
                     )
                 } else {
                     List {
-                        ForEach(filteredResults) { item in
+                        if let errorMsg = appState.searchErrorMessage {
+                            Section {
+                                ErrorBannerView(title: "Notice", message: errorMsg)
+                            }
+                        }
+                        
+                        ForEach(displayedResults) { item in
                             NavigationLink(destination: ItemDetailView(item: item)) {
                                 HStack(spacing: Spacing.md) {
                                     RoundedRectangle(cornerRadius: CornerRadius.sm)
@@ -122,6 +122,14 @@ public struct SearchView: View {
                 }
             }
             .searchable(text: $searchText, prompt: "Search Apple Music")
+            .onSubmit(of: .search) {
+                appState.performSearch(query: searchText, filter: selectedFilter)
+            }
+            .onChange(of: searchText) { _, newValue in
+                if newValue.isEmpty {
+                    appState.performSearch(query: "", filter: selectedFilter)
+                }
+            }
             .navigationTitle("Search")
         }
     }

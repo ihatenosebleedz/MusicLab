@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct JobDetailView: View {
     public let job: Job

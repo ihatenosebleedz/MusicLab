@@ -1,4 +1,5 @@
 import Foundation
+import MusicLabCore
 
 public enum MockData: Sendable {
     public static let sampleAlbums: [CatalogItem] = [

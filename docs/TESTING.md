@@ -36,10 +36,16 @@ export PATH="$HOME/.local/share/swift/6.4.1/usr/bin:$HOME/.local/bin:$PATH"
 **Blocks until:** Darwin Swift SDK installed (`xtool sdk install`) + auth.
 
 ### 1.2 Unit tests (core module)
-- Platform-agnostic core (models, networking, URL parsing, job state) tested
-  with `swift test` on Linux — no device, no server.
-- Example targets: catalog decoding, Apple Music URL parsing, API client error
-  mapping, job-state transitions, duplicate-submission guards.
+- Platform-agnostic core (`MusicLabCore`: models, AppleMusicURL parser, AppleMusicModels decoder, artwork URL generator) tested directly on Linux.
+- Execution command:
+  ```bash
+  export PATH="$HOME/.local/share/swift/6.4.1/usr/bin:$HOME/.local/bin:$PATH"
+  cd MusicLab && swift build --target MusicLabCoreTests-test-runner -Xlinker --allow-shlib-undefined && .build/out/Products/Debug-linux-x86_64/MusicLabCoreTests-test-runner
+  ```
+- Coverage:
+  - `AppleMusicURLTests`: Valid album URLs, albums without slug, songs within album (`?i=...`), playlist URLs, artist URLs, invalid hosts, unsupported resource types, malformed URLs (8 tests).
+  - `AppleMusicDecoderTests`: Search response JSON decoding, album with track relationships, track explicit tags/durations, artwork URL formatting (2 tests).
+  - Result: 10/10 passed in 0.003s.
 
 ### 0..n Physical-device tests (require iPhone)
 - Install + launch (`xtool install` / `xtool launch`).

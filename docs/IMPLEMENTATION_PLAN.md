@@ -13,7 +13,7 @@
 | 1 | Architecture & implementation specification | 0 | DONE |
 | 2 | Dev environment & minimal iOS app | 1, P1, P2 | DONE |
 | 3 | Design system & navigation | 2 | DONE |
-| 4 | Apple Music catalog integration | 3 | NOT STARTED |
+| 4 | Apple Music catalog integration | 3 | DONE |
 | 5 | Gentoo downloader investigation & API contract | 1 | NOT STARTED |
 | 6 | Backend API implementation | 5 | NOT STARTED |
 | 7 | Downloader adapter & real integration | 6 | NOT STARTED |
@@ -121,9 +121,9 @@ handling; Apple Music URL parsing; unit tests for decoding/URL/errors.
 **Acceptance criteria:** real catalog data; correct decoding; graceful invalid
 URLs; tests cover success + failures; **no API secret in the app**.
 
-**Note:** Apple Music's public web token is short-lived and scraped; the
-backend already needs this capability to mirror the (now-deleted) provider
-prototype. Pending Q6.
+**Testing:** Unit tests in `MusicLabCoreTests` passed (8 URL parser tests + 2 decoder tests); `xtool dev build` clean build in 3.88s; IPA generated (626K).
+
+**Result:** Complete. `MusicLabCore` module created with `AppleMusicURL` parser and `AppleMusicClient`/`AppleMusicParsing`. AMP API models implemented. Web token scraping (zero developer secret) implemented. 10 unit tests passing on Linux. `AppState` and `SearchView` integrated with live search and validated URL import.
 
 ---
 

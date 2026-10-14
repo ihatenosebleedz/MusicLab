@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct StatusBadgeView: View {
     public let state: JobState

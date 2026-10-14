@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct QueueView: View {
     @EnvironmentObject private var appState: AppState

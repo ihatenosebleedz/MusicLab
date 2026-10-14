@@ -3,9 +3,9 @@
 > Authoritative record of project state. Updated at the end of every numbered step.
 > This file must never contain credentials, tokens, passwords, keys, or Apple ID values.
 
-**Last updated:** 2026-10-13 (STEP 3 COMPLETE)
-**Current phase:** STEP 3 — Design system & navigation (COMPLETE)
-**Next step (not started):** STEP 4 — Apple Music catalog integration (pending explicit approval)
+**Last updated:** 2026-10-13 (STEP 4 COMPLETE)
+**Current phase:** STEP 4 — Apple Music catalog integration (COMPLETE)
+**Next step (not started):** STEP 5 — Gentoo downloader investigation & API contract (pending explicit approval)
 
 ---
 
@@ -257,71 +257,69 @@ persistence store, exact catalog call path, TLS detail.
 
 ### 12. Build and test results
  
-- Local build: `xtool dev build` succeeded (0 errors, 0 warnings, 3.28s). Output: `MusicLab/xtool/MusicLab.app`.
-- Packaging: `MusicLab.ipa` (538K) generated.
-- Deployment: IPA sent to physical iPhone `iphone182` via Tailscale file sharing.
-- Swift 6 strict concurrency checks: satisfied with `Sendable` domain models.
+- Local unit tests: 10/10 passed in 0.003s (`MusicLabCoreTests-test-runner` on Linux).
+  - 8 tests for Apple Music URL parser (albums, song within album `?i=...`, playlists, artists, errors).
+  - 2 tests for Apple Music API JSON decoder, track relationships, and artwork URL formatting.
+- iOS App build: `xtool dev build` succeeded (0 errors, 0 warnings, 3.88s).
+- Artifacts: `MusicLab.ipa` (626K) packaged.
+- Swift 6 strict concurrency checks: satisfied.
 
 ## 13. Known bugs and limitations
 
-- `xtool dev run/install` over direct USB triggers NIO epoll EPERM sandbox error in xtool source build; work around by installing the generated IPA via Tailscale or AltStore/SideStore.
-- Physical device `iphone182` was last seen offline on Tailscale (transfer queued/completed).
+- Physical device `iphone182` was offline during automated Tailscale push attempt (502 Bad Gateway); user can receive `MusicLab.ipa` when online or sideload manually.
+- `xtool dev run/install` direct USB triggers NIO epoll EPERM sandbox error in xtool source build; install via IPA or Tailscale when device is awake.
 
 ## 14. Blockers and causes
 
-- No active blockers for Step 3. Step 3 acceptance criteria met.
-- Step 4 depends on explicit approval.
+- No active blockers for Step 4. Step 4 acceptance criteria fully met.
+- Step 5 depends on explicit approval.
 
-## 15. Files changed in latest step (STEP 3)
+## 15. Files changed in latest step (STEP 4)
 
 Created:
-- `MusicLab/Sources/MusicLab/DesignSystem/Theme.swift`
-- `MusicLab/Sources/MusicLab/Models/CatalogItem.swift`
-- `MusicLab/Sources/MusicLab/Models/Job.swift`
-- `MusicLab/Sources/MusicLab/Models/ServerConfig.swift`
-- `MusicLab/Sources/MusicLab/Components/CardView.swift`
-- `MusicLab/Sources/MusicLab/Components/StatusBadgeView.swift`
-- `MusicLab/Sources/MusicLab/Components/StageLadderView.swift`
-- `MusicLab/Sources/MusicLab/Components/StateViews.swift`
-- `MusicLab/Sources/MusicLab/PreviewData/MockData.swift`
-- `MusicLab/Sources/MusicLab/Services/AppState.swift`
-- `MusicLab/Sources/MusicLab/Views/DiscoverView.swift`
-- `MusicLab/Sources/MusicLab/Views/SearchView.swift`
-- `MusicLab/Sources/MusicLab/Views/QueueView.swift`
-- `MusicLab/Sources/MusicLab/Views/LibraryView.swift`
-- `MusicLab/Sources/MusicLab/Views/SettingsView.swift`
-- `MusicLab/Sources/MusicLab/Views/ItemDetailView.swift`
-- `MusicLab/Sources/MusicLab/Views/JobDetailView.swift`
-- `MusicLab/Sources/MusicLab/Views/QuickImportSheet.swift`
+- `MusicLab/Sources/MusicLabCore/AppleMusicURL.swift`
+- `MusicLab/Sources/MusicLabCore/AppleMusicModels.swift`
+- `MusicLab/Sources/MusicLabCore/AppleMusicClient.swift`
+- `MusicLab/Sources/MusicLabCore/Models/CatalogItem.swift`
+- `MusicLab/Sources/MusicLabCore/Models/Job.swift`
+- `MusicLab/Sources/MusicLabCore/Models/ServerConfig.swift`
+- `MusicLab/Tests/MusicLabCoreTests/AppleMusicURLTests.swift`
+- `MusicLab/Tests/MusicLabCoreTests/AppleMusicDecoderTests.swift`
 
 Modified:
-- `MusicLab/Sources/MusicLab/ContentView.swift`
-- `MusicLab/Sources/MusicLab/MusicLabApp.swift`
+- `MusicLab/Package.swift` (added `MusicLabCore` and `MusicLabCoreTests` targets)
+- `MusicLab/Sources/MusicLab/Services/AppState.swift` (integrated `AppleMusicClient`, `AppleMusicURL.parse`)
+- `MusicLab/Sources/MusicLab/Views/SearchView.swift` (connected to live catalog search & loading/error states)
+- `MusicLab/Sources/MusicLab/Views/*.swift` (imported `MusicLabCore`)
+- `MusicLab/Sources/MusicLab/Models/Job.swift` (SwiftUI color extension)
+- `docs/TESTING.md`
 - `docs/IMPLEMENTATION_PLAN.md`
 - `docs/ENGINEERING_LOG.md`
 - `PROJECT_STATUS.md`
 
+Removed:
+- Redundant duplicate model definitions in `MusicLab/Sources/MusicLab/Models/` (now in `MusicLabCore`).
+
 ## 16. Security considerations
 
 - No credentials/tokens/keys/Apple ID recorded in any doc or code.
-- Bearer token in Settings is masked with SecureField and toggle.
-- Planned model keeps all secrets server-side; app stores only user-entered
-  server URL + API token in iOS Keychain/secure settings.
+- Apple Music web token acquired dynamically via anonymous asset scrape (same as `amdl`), requiring **zero** developer secrets or API tokens in the iOS app.
+- API Bearer Token in Settings is masked with SecureField and toggle.
 
 ## 17. Exact point at which work stopped
 
-STEP 3 is COMPLETE. Built cleanly with `xtool dev build` and packaged `MusicLab.ipa`.
-Waiting for explicit approval before proceeding to STEP 4 (Apple Music catalog integration).
+STEP 4 is COMPLETE. Unit tests passing (10/10), `xtool dev build` succeeded, and `MusicLab.ipa` packaged.
+Waiting for explicit approval before proceeding to STEP 5 (Gentoo downloader investigation & API contract).
 
 ## 17a. Next planned action
 
-On approval: begin **STEP 4 — Apple Music catalog integration**
-(decide AMP web token vs. developer token, build Search endpoint models, pagination, error states, and unit tests).
+On approval: begin **STEP 5 — Gentoo downloader investigation & API contract**
+(investigate `amdl` CLI flags, verify exact `--json` schema output on Gentoo, test cancel behavior via process group, draft OpenAPI/REST specification).
 
 ## 17b. Resumption instruction for a future OpenCode session
 
 1. Read this file, then `docs/IMPLEMENTATION_PLAN.md`, recent
    `docs/ENGINEERING_LOG.md`, and `docs/ARCHITECTURE_DECISIONS.md`.
-2. Verify STEP 3 status (COMPLETE).
+2. Verify STEP 4 status (COMPLETE).
 3. Do **not** advance past the last approved step. Resume only the authorized
    step, following the approval protocol in the project brief.

@@ -18,7 +18,15 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "MusicLab"
+            name: "MusicLabCore"
+        ),
+        .target(
+            name: "MusicLab",
+            dependencies: ["MusicLabCore"]
+        ),
+        .testTarget(
+            name: "MusicLabCoreTests",
+            dependencies: ["MusicLabCore"]
         ),
     ]
 )

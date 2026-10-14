@@ -222,4 +222,31 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 
 **Acceptance:** All primary tabs open; navigation stack and sheets work; consistent design system; state cards designed; actions report honest feedback without fake success claims; builds cleanly.
 
-**Status:** STEP 3 DONE. Awaiting explicit approval before STEP 4.
+**Status:** STEP 3 DONE.
+
+---
+
+## 2026-10-13 — STEP 4: Apple Music catalog integration (DONE)
+
+**Objective:** Real catalog search and metadata presentation, zero-developer-secret web token acquisition, Apple Music URL parsing with storefront and track resolution, domain mapping, unit tests, and app state integration.
+
+**Actions:**
+- Created `MusicLabCore` module under `MusicLab/Sources/MusicLabCore`:
+  - `AppleMusicURL.swift`: Implemented strict URL parser supporting albums, albums with track query (`?i=...`), direct songs, playlists, and artists. Added structured error handling (`AppleMusicURLError`).
+  - `AppleMusicModels.swift`: Implemented raw Apple Music / AMP API Decodable models (`AMSearchResponse`, `AMResource`, `AMAttributes`, `AMArtwork`, `AMRelationships`, `AMResourceCollection`), and artwork URL dimension formatting.
+  - `AppleMusicClient.swift` & `AppleMusicParsing`: Implemented anonymous zero-secret web token acquisition from `https://music.apple.com` web assets (identical to the mechanism used by `amdl`), catalog search against `https://amp-api.music.apple.com/v1/catalog/{storefront}/search`, and automatic token refresh on 401. Decoupled pure parsing logic for cross-platform Linux compatibility.
+  - Moved domain models (`CatalogItem.swift`, `Job.swift`, `ServerConfig.swift`) to `MusicLabCore` as pure Foundation types.
+- Created `MusicLabCoreTests` test suite with 10 unit tests:
+  - 8 tests in `AppleMusicURLTests.swift`: Valid albums, albums without slug, songs within album (`?i=...`), playlists, artists, invalid host rejections, unsupported resource types, and malformed URLs.
+  - 2 tests in `AppleMusicDecoderTests.swift`: Real Apple Music search response JSON decoding, album-track relationships, track number/explicit flags/formatted duration, and artwork dimension substitution.
+- Executed unit tests on Linux: built with `swift build --target MusicLabCoreTests-test-runner -Xlinker --allow-shlib-undefined` and executed `MusicLabCoreTests-test-runner`. All 10 tests passed in 0.003s.
+- Updated `AppState.swift` and `SearchView.swift`:
+  - Hooked `performSearch(query:filter:)` to `AppleMusicClient`.
+  - Added URL validation using `AppleMusicURL.parse` in `submitUrlImport(url:)` with descriptive user feedback for invalid URLs.
+- Built iOS app with `xtool dev build`: clean build in 3.88s.
+- Packaged `.ipa` at `MusicLab/MusicLab.ipa` (626K).
+- Sent updated IPA to `iphone182` via Tailscale file share (`tailscale file cp`).
+
+**Acceptance:** Real catalog models and decoder implemented; URL parsing handles full matrix of Apple Music link styles and errors gracefully; zero API secrets in the app; 10 Linux unit tests pass; builds cleanly for iOS.
+
+**Status:** STEP 4 DONE. Awaiting explicit approval before STEP 5.

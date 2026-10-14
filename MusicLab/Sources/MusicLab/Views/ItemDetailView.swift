@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct ItemDetailView: View {
     public let item: CatalogItem

@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct QuickImportSheet: View {
     @EnvironmentObject private var appState: AppState

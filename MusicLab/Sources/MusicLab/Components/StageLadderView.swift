@@ -1,4 +1,5 @@
 import SwiftUI
+import MusicLabCore
 
 public struct StageLadderView: View {
     public let job: Job
