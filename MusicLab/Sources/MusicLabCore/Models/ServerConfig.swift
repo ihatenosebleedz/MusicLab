@@ -22,9 +22,9 @@ public struct ServerConfig: Codable, Equatable, Sendable {
     }
     
     public static let `default` = ServerConfig(
-        backendUrl: "http://gentoo.tail29a9cb.ts.net:3000",
+        backendUrl: "",
         bearerToken: "",
-        navidromeUrl: "https://gentoo.tail29a9cb.ts.net:4533",
+        navidromeUrl: "",
         isConnected: false,
         lastChecked: nil
     )

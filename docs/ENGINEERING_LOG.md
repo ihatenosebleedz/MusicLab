@@ -300,3 +300,19 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 - Copied build artifacts to `Builds/` directory (`MusicLab.app`, `MusicLab.ipa`) and retained previous versions.
 
 **Result:** Live backend operational on Gentoo (LAN + Tailscale, port 3001). Real amdl path confirmed accessible. Health checks pass. Ready for STEP 8.
+
+---
+
+## 2026-10-13 — STEP 8: iOS ↔ backend integration (COMPLETE)
+
+**Objective:** Wire iOS app to live backend with secure auth, Keychain, and proper networking.
+
+**Actions:**
+- Added `KeychainService.swift` in `MusicLabCore/Services` to securely store bearer token (Security framework on iOS; UserDefaults fallback on Linux).
+- Updated `ServerConfig` defaults to empty values (no hardcoded host/credentials).
+- Modified `AppState` to load/save token via Keychain; non-sensitive config persisted in UserDefaults.
+- BackendClient (actor), DTOs, and wiring already present; tests pass (BackendDTOTests: 4/4).
+- Rebuilt iOS app via `xtool dev build` (clean build) and repackaged `.ipa`, copied to `Builds/`.
+- Verified automated tests pass.
+
+**Result:** iOS app configured for live backend with secure credential storage, non-blocking actor networking, no hardcoded credentials. STEP 8 complete.

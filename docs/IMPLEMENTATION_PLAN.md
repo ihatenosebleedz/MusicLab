@@ -17,7 +17,7 @@
 | 5 | Gentoo downloader investigation & API contract | 1 | DONE |
 | 6 | Backend API implementation | 5 | DONE |
 | 7 | Downloader adapter & real integration | 6 | DONE |
-| 8 | iOS ↔ backend integration | 7, 2 | NOT STARTED |
+| 8 | iOS ↔ backend integration | 7, 2 | DONE |
 | 9 | Import submission workflow | 4, 8 | NOT STARTED |
 | 10 | Persistent queue & live progress | 9 | NOT STARTED |
 | 11 | File processing & Navidrome verification | 7, 8 | NOT STARTED |

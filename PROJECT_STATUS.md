@@ -1,5 +1,5 @@
-**Last updated:** 2026-10-13 (STEP 7 COMPLETE)
-**Current phase:** STEP 7 — Downloader adapter & real integration (COMPLETE)
-**Next step (not started):** STEP 8 — iOS → backend integration (pending explicit approval)
+**Last updated:** 2026-10-13 (STEP 8 COMPLETE)
+**Current phase:** STEP 8 — iOS ↔ backend integration (COMPLETE)
+**Next step (not started):** STEP 9 — Import submission workflow (pending explicit approval)
 
 ---

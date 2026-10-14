@@ -40,6 +40,7 @@ public final class AppState: ObservableObject {
     @Published public var isServerOnline: Bool = false
     @Published public var isCheckingServer: Bool = false
     @Published public var serverStatusMessage: String = "Not connected"
+    private let keychain = KeychainService()
     
     // Search state
     @Published public var searchQuery: String = ""
@@ -54,10 +55,12 @@ public final class AppState: ObservableObject {
     @Published public var importFeedbackToast: String? = nil
     
     private let musicClient = AppleMusicClient()
+    private let backendClient = BackendClient()
     
     public init() {
         // Load saved settings if any
         loadSavedConfig()
+        testServerConnection()
     }
     
     public var activeJobsCount: Int {
@@ -65,19 +68,36 @@ public final class AppState: ObservableObject {
     }
     
     public func submitImport(item: CatalogItem) {
-        let newJob = Job(
-            id: "job-\(Int.random(in: 1000...9999))",
-            type: item.type.rawValue,
-            url: item.appleMusicUrl,
-            name: "\(item.artistName) — \(item.title)",
-            state: .queued,
-            stage: .resolving,
-            progressHint: "Enqueued for amdl processing",
-            createdAt: Date(),
-            updatedAt: Date()
-        )
-        jobs.insert(newJob, at: 0)
-        showToast("Added '\(item.title)' to queue")
+        if isServerOnline && !serverConfig.bearerToken.isEmpty {
+            Task {
+                do {
+                    _ = try await backendClient.submitJob(
+                        baseUrl: serverConfig.backendUrl,
+                        token: serverConfig.bearerToken,
+                        appleMusicUrl: item.appleMusicUrl,
+                        name: "\(item.artistName) — \(item.title)"
+                    )
+                    await self.refreshJobsFromBackend()
+                    self.showToast("Submitted '\(item.title)' to server")
+                } catch {
+                    self.showToast("Submission failed: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            let newJob = Job(
+                id: "job-\(Int.random(in: 1000...9999))",
+                type: item.type.rawValue,
+                url: item.appleMusicUrl,
+                name: "\(item.artistName) — \(item.title)",
+                state: .queued,
+                stage: .resolving,
+                progressHint: "Enqueued (offline mode)",
+                createdAt: Date(),
+                updatedAt: Date()
+            )
+            jobs.insert(newJob, at: 0)
+            showToast("Added '\(item.title)' to local queue")
+        }
     }
     
     public func submitUrlImport(url: String) {
@@ -88,22 +108,42 @@ public final class AppState: ObservableObject {
             let parsed = try AppleMusicURL.parse(trimmed)
             let typeName = parsed.effectiveResourceType.rawValue
             let label = parsed.slug?.replacingOccurrences(of: "-", with: " ").capitalized ?? "Item \(parsed.effectiveIdentifier)"
+            let itemName = "\(typeName.capitalized): \(label)"
             
-            let newJob = Job(
-                id: "job-\(Int.random(in: 1000...9999))",
-                type: typeName,
-                url: parsed.originalURL.absoluteString,
-                name: "\(typeName.capitalized): \(label)",
-                state: .queued,
-                stage: .resolving,
-                progressHint: "Enqueued via validated URL (\(parsed.storefront))",
-                createdAt: Date(),
-                updatedAt: Date()
-            )
-            jobs.insert(newJob, at: 0)
-            quickImportUrl = ""
-            isShowingQuickImport = false
-            showToast("Added validated \(typeName) to queue")
+            if isServerOnline && !serverConfig.bearerToken.isEmpty {
+                Task {
+                    do {
+                        _ = try await backendClient.submitJob(
+                            baseUrl: serverConfig.backendUrl,
+                            token: serverConfig.bearerToken,
+                            appleMusicUrl: parsed.originalURL.absoluteString,
+                            name: itemName
+                        )
+                        await self.refreshJobsFromBackend()
+                        self.quickImportUrl = ""
+                        self.isShowingQuickImport = false
+                        self.showToast("Submitted \(typeName) to server")
+                    } catch {
+                        self.showToast("Server import failed: \(error.localizedDescription)")
+                    }
+                }
+            } else {
+                let newJob = Job(
+                    id: "job-\(Int.random(in: 1000...9999))",
+                    type: typeName,
+                    url: parsed.originalURL.absoluteString,
+                    name: itemName,
+                    state: .queued,
+                    stage: .resolving,
+                    progressHint: "Enqueued via validated URL (\(parsed.storefront))",
+                    createdAt: Date(),
+                    updatedAt: Date()
+                )
+                jobs.insert(newJob, at: 0)
+                quickImportUrl = ""
+                isShowingQuickImport = false
+                showToast("Added validated \(typeName) to local queue")
+            }
         } catch let urlError as AppleMusicURLError {
             showToast("Error: \(urlError.localizedDescription)")
         } catch {
@@ -164,10 +204,26 @@ public final class AppState: ObservableObject {
     }
     
     public func cancelJob(id: String) {
-        if let index = jobs.firstIndex(where: { $0.id == id }) {
-            jobs[index].state = .cancelled
-            jobs[index].updatedAt = Date()
-            showToast("Job cancelled")
+        if isServerOnline && !serverConfig.bearerToken.isEmpty {
+            Task {
+                do {
+                    _ = try await backendClient.cancelJob(
+                        baseUrl: serverConfig.backendUrl,
+                        token: serverConfig.bearerToken,
+                        jobId: id
+                    )
+                    await self.refreshJobsFromBackend()
+                    self.showToast("Job cancelled on server")
+                } catch {
+                    self.showToast("Failed to cancel job: \(error.localizedDescription)")
+                }
+            }
+        } else {
+            if let index = jobs.firstIndex(where: { $0.id == id }) {
+                jobs[index].state = .cancelled
+                jobs[index].updatedAt = Date()
+                showToast("Job cancelled")
+            }
         }
     }
     
@@ -190,34 +246,53 @@ public final class AppState: ObservableObject {
         isCheckingServer = true
         serverStatusMessage = "Checking \(serverConfig.backendUrl)..."
         
-        guard let url = URL(string: "\(serverConfig.backendUrl)/health") else {
-            isCheckingServer = false
-            isServerOnline = false
-            serverStatusMessage = "Invalid backend URL"
-            return
-        }
-        
         Task {
-            var request = URLRequest(url: url)
-            request.timeoutInterval = 4.0
             do {
-                let (_, response) = try await URLSession.shared.data(for: request)
-                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                    self.isServerOnline = true
-                    self.serverConfig.isConnected = true
-                    self.serverConfig.lastChecked = Date()
-                    self.serverStatusMessage = "Online (200 OK)"
-                } else {
-                    self.isServerOnline = false
-                    self.serverConfig.isConnected = false
-                    self.serverStatusMessage = "Unexpected status: \((response as? HTTPURLResponse)?.statusCode ?? 0)"
-                }
+                let health = try await backendClient.checkHealth(baseUrl: serverConfig.backendUrl)
+                self.isServerOnline = true
+                self.serverConfig.isConnected = true
+                self.serverConfig.lastChecked = Date()
+                let amdlStatus = health.services?.amdl?.available == true ? "amdl ready" : "amdl unavailable"
+                self.serverStatusMessage = "Online (v\(health.version), \(amdlStatus))"
+                await self.refreshJobsFromBackend()
             } catch {
                 self.isServerOnline = false
                 self.serverConfig.isConnected = false
                 self.serverStatusMessage = "Unreachable: \(error.localizedDescription)"
             }
             self.isCheckingServer = false
+        }
+    }
+    
+    public func refreshJobsFromBackend() async {
+        guard isServerOnline, !serverConfig.bearerToken.isEmpty else { return }
+        do {
+            let summaries = try await backendClient.fetchJobs(
+                baseUrl: serverConfig.backendUrl,
+                token: serverConfig.bearerToken
+            )
+            
+            // Map summaries to Job models
+            let serverJobs = summaries.map { s in
+                Job(
+                    id: s.id,
+                    type: s.type,
+                    url: s.url,
+                    name: s.name,
+                    state: JobState(rawValue: s.state) ?? .queued,
+                    stage: s.stage.flatMap { JobStage(rawValue: $0) },
+                    progressHint: s.progressHint,
+                    createdAt: ISO8601DateFormatter().date(from: s.createdAt) ?? Date(),
+                    updatedAt: ISO8601DateFormatter().date(from: s.updatedAt) ?? Date(),
+                    addedTracks: [],
+                    navidrome: s.navidrome.map { JobNavidromeStatus(verified: $0.verified, matches: $0.matches) }
+                )
+            }
+            if !serverJobs.isEmpty {
+                self.jobs = serverJobs
+            }
+        } catch {
+            print("[AppState] Error fetching jobs: \(error.localizedDescription)")
         }
     }
     
@@ -238,12 +313,23 @@ public final class AppState: ObservableObject {
     private func loadSavedConfig() {
         if let data = UserDefaults.standard.data(forKey: "MusicLab.ServerConfig"),
            let config = try? JSONDecoder().decode(ServerConfig.self, from: data) {
-            self.serverConfig = config
+            var loaded = config
+            if let token = keychain.load() {
+                loaded.bearerToken = token
+            }
+            self.serverConfig = loaded
+        } else if let token = keychain.load() {
+            self.serverConfig.bearerToken = token
         }
     }
     
     public func saveConfig() {
-        if let data = try? JSONEncoder().encode(serverConfig) {
+        if !serverConfig.bearerToken.isEmpty {
+            keychain.save(serverConfig.bearerToken)
+        }
+        var toSave = serverConfig
+        toSave.bearerToken = ""
+        if let data = try? JSONEncoder().encode(toSave) {
             UserDefaults.standard.set(data, forKey: "MusicLab.ServerConfig")
         }
         showToast("Settings saved")
