@@ -40,7 +40,9 @@ public final class AppState: ObservableObject {
     @Published public var isServerOnline: Bool = false
     @Published public var isCheckingServer: Bool = false
     @Published public var serverStatusMessage: String = "Not connected"
+    @Published public var isSubmitting: Bool = false
     private let keychain = KeychainService()
+    private var pollTimer: Timer?
     
     // Search state
     @Published public var searchQuery: String = ""
@@ -61,13 +63,28 @@ public final class AppState: ObservableObject {
         // Load saved settings if any
         loadSavedConfig()
         testServerConnection()
+        startPolling()
     }
     
+    private func startPolling() {
+        Task { [weak self] in
+            while true {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if let self = self, self.isServerOnline {
+                    await self.refreshJobsFromBackend()
+                }
+            }
+        }
+    }
+
     public var activeJobsCount: Int {
         jobs.filter { $0.state.isActive }.count
     }
     
     public func submitImport(item: CatalogItem) {
+        guard !isSubmitting else { return }
+        isSubmitting = true
+        defer { isSubmitting = false }
         if isServerOnline && !serverConfig.bearerToken.isEmpty {
             Task {
                 do {
@@ -101,8 +118,11 @@ public final class AppState: ObservableObject {
     }
     
     public func submitUrlImport(url: String) {
+        guard !isSubmitting else { return }
         let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        isSubmitting = true
+        defer { isSubmitting = false }
         
         do {
             let parsed = try AppleMusicURL.parse(trimmed)

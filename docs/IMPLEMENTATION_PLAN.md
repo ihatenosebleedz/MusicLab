@@ -18,11 +18,11 @@
 | 6 | Backend API implementation | 5 | DONE |
 | 7 | Downloader adapter & real integration | 6 | DONE |
 | 8 | iOS ↔ backend integration | 7, 2 | DONE |
-| 9 | Import submission workflow | 4, 8 | NOT STARTED |
-| 10 | Persistent queue & live progress | 9 | NOT STARTED |
-| 11 | File processing & Navidrome verification | 7, 8 | NOT STARTED |
-| 12 | Library & history | 11 | NOT STARTED |
-| 13 | Release discovery | 4 | NOT STARTED |
+| 9 | Import submission workflow | 4, 8 | DONE |
+| 10 | Persistent queue & live progress | 9 | DONE |
+| 11 | File processing & Navidrome verification | 7, 8 | DONE |
+| 12 | Library & history | 11 | DONE |
+| 13 | Release discovery | 4 | DONE |
 | 14 | UI polish & accessibility | 3–12 | NOT STARTED |
 | 15 | Reliability & security audit | all | NOT STARTED |
 | 16 | Final end-to-end acceptance | all | NOT STARTED |

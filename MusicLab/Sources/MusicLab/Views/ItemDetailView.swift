@@ -59,9 +59,9 @@ public struct ItemDetailView: View {
                     appState.submitImport(item: item)
                 } label: {
                     HStack {
-                        Image(systemName: "arrow.down.circle.fill")
+                        Image(systemName: appState.isSubmitting ? "hourglass" : "arrow.down.circle.fill")
                             .font(.headline)
-                        Text("Import to Navidrome")
+                        Text(appState.isSubmitting ? "Submitting..." : "Import to Navidrome")
                             .font(.headline)
                     }
                     .frame(maxWidth: .infinity)
@@ -71,6 +71,7 @@ public struct ItemDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
                     .shadow(color: Theme.accent.opacity(0.3), radius: 6, y: 3)
                 }
+                .disabled(appState.isSubmitting)
                 .padding(.horizontal)
                 
                 // Track list (if album or playlist)

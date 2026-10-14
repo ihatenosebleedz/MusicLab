@@ -115,7 +115,7 @@ public struct SettingsView: View {
                 // Section: App Metadata
                 Section("About") {
                     LabeledContent("App Name", value: "Music Lab")
-                    LabeledContent("Version", value: "1.0.0 (Step 3)")
+                    LabeledContent("Version", value: "1.0.0")
                     LabeledContent("Toolchain", value: "xtool (Linux / Darwin SDK 27.1)")
                     
                     Button("Save Configuration") {

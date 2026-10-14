@@ -316,3 +316,18 @@ interactively — nobody stores it. If `-80045` is gone, proceed to
 - Verified automated tests pass.
 
 **Result:** iOS app configured for live backend with secure credential storage, non-blocking actor networking, no hardcoded credentials. STEP 8 complete.
+
+---
+
+## 2026-10-13 — STEP 9: Import submission workflow (COMPLETE)
+
+**Objective:** Implement import submission workflow with validation, error handling, dedupe protection.
+
+**Actions:**
+- Added `isSubmitting` guard in `AppState` to prevent double-tap submissions.
+- Updated `submitImport()` and `submitUrlImport()` to use in-flight guard and handle conflicts gracefully.
+- Disabled Import button in `ItemDetailView` while submitting; shows loading state.
+- Backend integration already submits to server and refreshes jobs; reflects server responses.
+- Rebuilt IPA; core tests pass (14/14).
+
+**Result:** Import submission workflow complete with dedupe protection and proper UX.
