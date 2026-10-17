@@ -15,7 +15,11 @@
 
 ---
 
-## 🎬 The 15-Second Workflow
+## 🎬 Demo Workflow
+
+<p align="center">
+  <img src="docs/assets/demo.gif" width="300" alt="MusicLab Demo Workflow">
+</p>
 
 ```
 [Apple Music]  ──(Share)──>  [iOS Shortcut]  ──(musiclab://)──>  [MusicLab App]
