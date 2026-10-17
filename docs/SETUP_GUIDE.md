@@ -203,13 +203,19 @@ doas rc-service musiclab-backend start
 
 ---
 
-## Step 5: Configure the Apple Music Share Shortcut
+## Step 5: Install the Apple Music Share Shortcut
 
+### Option A: 1-Tap Install (Recommended)
+1. Open this link on your iPhone: **[Install "Add to MusicLab" Shortcut](https://www.icloud.com/shortcuts/15de06d0d8034d8c850174ff9e0ebea5)**.
+2. Tap **Add Shortcut**.
+3. In Apple Music, tap **Share** on any track, album, or playlist, scroll to the bottom, tap **Edit Actions**, and tap **(+)** next to **Add to MusicLab** to pin it to Favorites at the top of your Share Sheet.
+
+### Option B: Manual Creation
 1. Open the iOS **Shortcuts** app and tap **(+)**.
 2. Name it **Add to MusicLab**.
 3. Tap **(i)** at the bottom and switch on **Show in Share Sheet**. Set input to **URLs** and **Text**.
 4. Add action: **URL** → `musiclab://import?url=[Shortcut Input]`.
 5. Add action: **Open URLs** → passing the URL from the previous step.
-6. Open Apple Music, tap **Share** on any track or playlist, scroll to the bottom, tap **Edit Actions**, and tap **(+)** next to **Add to MusicLab** to pin it to Favorites.
+6. Pin it to your Favorites in the Share Sheet.
 
 🎉 **You're all set!** Whenever you tap share in Apple Music, it routes straight into your self-hosted Navidrome library!

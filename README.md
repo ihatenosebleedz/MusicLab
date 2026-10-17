@@ -58,18 +58,21 @@ npm start
 📖 **Detailed guide:** See the [Self-Hosting Setup Guide](docs/SETUP_GUIDE.md) for step-by-step instructions (systemd/OpenRC services, `amdl` CLI, DRM helpers, and Navidrome integration).
 
 ### 2. Install the iOS App
-1. Download the latest `MusicLab.ipa` from [GitHub Releases](../../releases).
+1. Download the latest `MusicLab.ipa` from [GitHub Releases](https://github.com/ihatenosebleedz/MusicLab/releases).
 2. Sideload the IPA onto your iPhone using **TrollStore**, **AltStore**, **SideStore**, or **LiveContainer**.
 3. Launch MusicLab, enter your backend URL (e.g. `http://100.x.y.z:3000` via Tailscale/LAN) and the secret token.
 
-### 3. Add the Share Sheet Shortcut (30 Seconds)
-1. Open the built-in **Shortcuts** app on your iPhone.
-2. Tap **(+)** to create a new shortcut named **"Add to MusicLab"**.
-3. Tap **(i)** (Details) and toggle ON **"Show in Share Sheet"**.
-4. Configure the two actions:
-   - **URL:** `musiclab://import?url=` and insert the blue **Shortcut Input** token.
-   - **Open URLs:** pass the URL from above.
-5. In Apple Music, tap **Share** on any track, scroll to the bottom, tap **Edit Actions**, and tap **(+)** to pin **Add to MusicLab** to your Favorites at the top of the Share Sheet!
+### 3. Install the iOS Share Sheet Shortcut (1-Tap Install)
+
+<p align="left">
+  <a href="https://www.icloud.com/shortcuts/15de06d0d8034d8c850174ff9e0ebea5">
+    <img src="https://img.shields.io/badge/iOS_Shortcut-Add_to_MusicLab-FA2D4B?style=for-the-badge&logo=shortcuts&logoColor=white" alt="Add to Shortcuts">
+  </a>
+</p>
+
+1. Tap **[Add to MusicLab Shortcut](https://www.icloud.com/shortcuts/15de06d0d8034d8c850174ff9e0ebea5)** on your iPhone to install it in one tap.
+2. Open **Apple Music**, tap **Share** on any track, album, or playlist.
+3. Scroll down in the Share Sheet, tap **Edit Actions**, and tap **(+)** next to **Add to MusicLab** to pin it to your Favorites right at the top!
 
 ---
 
