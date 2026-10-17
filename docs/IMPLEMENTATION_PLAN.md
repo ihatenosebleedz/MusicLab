@@ -182,12 +182,12 @@ explicitly-requested test only; no bulk downloads.
 progress; downloader untouched/working; live integration deployed on Gentoo.
 
 **Testing:**
-- Backend deployed to `nbz@192.168.4.64` (`gentoo`) at `~/musiclab-backend`.
+- Backend deployed to `nbz@192.168.1.100` (`gentoo`) at `~/musiclab-backend`.
 - Native `node:sqlite` engine verified without node-gyp native compilation mismatch.
 - Service installed under OpenRC (`/etc/init.d/musiclab-backend`) on port `3001` (port 3000 in use by `next-server`).
 - Live health check returns 200 OK with `amdl` available, `wrapper-lite` healthy (`regions: ["us"]`), and `navidrome` OpenSubsonic ping OK.
 - Catalog search verified over HTTP against live backend via scraped AMP web token.
-- Accessible directly on LAN (`192.168.4.64:3001`) and over Tailscale (`100.116.177.77:3001`).
+- Accessible directly on LAN (`192.168.1.100:3001`) and over Tailscale (`100.x.y.z:3001`).
 
 **Result:** Complete. Downloader adapter deployed live to Gentoo as a managed OpenRC daemon with active connection to `amdl` in `~/apple-music-downloader`, `wrapper-lite`, and Navidrome.
 
@@ -303,3 +303,51 @@ test import; observe queue, download, Navidrome discovery, final status.
 **Tasks:** final build; install/deploy docs; backend deploy + rollback; secret
 management; troubleshooting; known limitations; final test report; signing/
 distribution notes. No public distribution without permission.
+
+---
+
+# PHASE 2 — Production polish (13-step engagement)
+
+Execution gate: inspect → plan → approve → implement → test → document → STOP,
+per step. No live-Gentoo changes (deploy/restart/real downloads) without showing
+exact changes and explicit approval.
+
+- **R1 — Audit** *(COMPLETE)*. Backend logs root cause, demo-data inventory,
+  Navidrome folders, destination mismatch, deploy target identified.
+  User-locked defaults: authenticated `GET /logs`; device-side catalog search;
+  server-side destination map; deploy to `~/musiclab-backend/src`; keep bearer
+  token (no TLS change).
+- **R2 — Test baselines** *(COMPLETE)*: backend 6/6, iOS core 14/14.
+- **R3 — Remove demo data + honest states** *(COMPLETE)*. No fake offline jobs;
+  honest connection-aware empty states in Library/Queue; honest retry/cancel.
+- **R4 — Live search** *(COMPLETE)*: 300ms debounce + cancellation on keystroke;
+  new `SearchDebouncer` (MusicLabCore, unit-tested); in-flight search superseded
+  via `Task.isCancelled` guards so stale results can't overwrite newer ones;
+  loading/error/empty states retained; URL field kept separate.
+- **R5 — Onboarding + persistence** *(COMPLETE)*: config auto-persists on
+  test/save (token in keychain, never UserDefaults); first-run `OnboardingView`
+  gated by a persisted `hasCompletedOnboarding` flag; existing configured users
+  migrate past onboarding; `ServerConfigTests` cover the persisted shape.
+- **R6 — Theming + app icons** *(COMPLETE)*: `AccentOption` picker in Settings (7
+  accents incl. Pride), persisted to UserDefaults and applied app-wide through
+  dynamic `Theme.accent`/`Theme.accentGradient` + root `.tint()`/`.id()`.
+  App icon regenerated as a single pride-rainbow icon; **user decided against**
+  alternate icons, so `CFBundleAlternateIcons` verification was dropped as
+  unnecessary (xtool ships only `AppIcon.png`).
+- **R7 — Backend `/logs`** *(COMPLETE)*: authenticated, paginated, redacted
+  `GET /logs` covering backend service file + per-job amdl stdout/stderr (SQLite)
+  + wrapper-lite file; `jobId` scopes to one job; every line passes `redact()`
+  (bearer/`name=value`/exact-secret masking). New `tests/logs.test.js`.
+  Live deploy still requires approval.
+- **R8 — Destination mapping** *(COMPLETE in code)*: server-side id→path map
+  (`DESTINATIONS`/`DEFAULT_DESTINATION`), `GET /destinations`, `destinationId` on
+  `POST /jobs`, and a generated per-destination amdl working dir that rewrites
+  only the `*-save-folder` keys (amdl has no `--dest` flag). New
+  `tests/destinations.test.js`. NO live-Gentoo changes without approval.
+- **R9 — Ordered playlist import** *(DEFERRED → `todo.md`)*: manifest + ordering
+  + idempotency beyond current completion-order `.m3u8` (`jobRunner.js`).
+- **R10 — Logs UI** *(DEFERRED → `todo.md`)*: expand JobDetail logs; wire to
+  `GET /logs`.
+- **R11 — UI polish** *(DEFERRED → `todo.md`)*.
+- **R12 — Security/reliability pass** *(PARTIAL; remainder → `todo.md`)*.
+- **R13 — Final test + docs + handoff** *(DEFERRED → `todo.md`)*.

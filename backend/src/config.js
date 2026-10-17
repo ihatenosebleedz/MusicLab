@@ -27,6 +27,33 @@ loadDotEnv(resolve(process.cwd(), '.env'));
 
 const e = process.env;
 
+/**
+ * Parse DESTINATIONS (a JSON object of id -> absolute path).
+ * Entries with a non-absolute path are dropped (they could not be a library).
+ */
+export function parseDestinations(raw) {
+  if (!raw || !raw.trim()) return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`DESTINATIONS is not valid JSON: ${err.message}`);
+  }
+  if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) {
+    throw new Error('DESTINATIONS must be a JSON object of { "<id>": "<absolute path>" }.');
+  }
+  const map = {};
+  for (const [id, path] of Object.entries(parsed)) {
+    if (!id.trim()) continue;
+    if (typeof path !== 'string' || !path.startsWith('/')) {
+      console.warn(`[config] ignoring destination "${id}": path must be absolute.`);
+      continue;
+    }
+    map[id] = path;
+  }
+  return map;
+}
+
 export const config = {
   port: parseInt(e.PORT ?? '3000', 10),
   host: e.HOST ?? '0.0.0.0',
@@ -51,4 +78,31 @@ export const config = {
   wrapperLite: {
     url: e.WRAPPER_LITE_URL ?? 'http://127.0.0.1:12340',
   },
+
+  // Log sources for GET /logs. Empty path => that source is unavailable.
+  logs: {
+    file:       e.LOG_FILE       ?? '',
+    wrapperFile: e.WRAPPER_LOG_FILE ?? '',
+    maxFileLines: parseInt(e.LOG_MAX_LINES ?? '2000', 10),
+  },
+
+  // Server-side destination id -> absolute path map (steers amdl save folders).
+  destinations: {
+    map: parseDestinations(e.DESTINATIONS),
+    defaultId: e.DEFAULT_DESTINATION ?? '',
+  },
 };
+
+// Resolve the default destination id once, so every consumer agrees on it.
+{
+  const ids = Object.keys(config.destinations.map);
+  if (!config.destinations.defaultId && ids.length > 0) {
+    config.destinations.defaultId = ids[0];
+  }
+  if (config.destinations.defaultId && !(config.destinations.defaultId in config.destinations.map)) {
+    throw new Error(
+      `DEFAULT_DESTINATION "${config.destinations.defaultId}" is not present in DESTINATIONS ` +
+      `(known ids: ${ids.join(', ') || 'none'}).`
+    );
+  }
+}

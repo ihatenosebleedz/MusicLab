@@ -103,4 +103,48 @@ final class AppleMusicDecoderTests: XCTestCase {
         let formatted = artwork.formattedUrl(width: 800, height: 800)
         XCTAssertEqual(formatted, "https://example.com/art/800x800bb.jpg")
     }
+
+    func testDecodeSearchResponseWithAttributeLessRelationshipStubs() throws {
+        // Apple's search payloads embed artist->albums relationship stubs that
+        // omit `attributes`. Decoding must tolerate these instead of failing the
+        // entire response (regression: previously threw a DecodingError).
+        let json = """
+        {
+          "results": {
+            "artists": {
+              "data": [
+                {
+                  "id": "482586",
+                  "type": "artists",
+                  "attributes": { "name": "The Weeknd", "genreNames": ["Pop"] },
+                  "relationships": {
+                    "albums": {
+                      "data": [
+                        { "id": "1440871397", "type": "albums", "href": "/v1/catalog/us/albums/1440871397" }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "albums": {
+              "data": [
+                {
+                  "id": "1440871397",
+                  "type": "albums",
+                  "attributes": { "name": "Starboy", "artistName": "The Weeknd", "trackCount": 18 }
+                }
+              ]
+            }
+          }
+        }
+        """
+        let data = json.data(using: .utf8)!
+        let client = AppleMusicClient()
+        let items = try client.parseSearchResponse(data)
+
+        XCTAssertEqual(items.count, 2)
+        XCTAssertTrue(items.contains { $0.type == .artist && $0.title == "The Weeknd" })
+        XCTAssertTrue(items.contains { $0.type == .album && $0.title == "Starboy" })
+    }
 }

@@ -69,10 +69,10 @@ public struct AMResource: Codable, Identifiable, Sendable {
     public let id: String
     public let type: String
     public let href: String?
-    public let attributes: AMAttributes
+    public let attributes: AMAttributes?
     public let relationships: AMRelationships?
-    
-    public init(id: String, type: String, href: String? = nil, attributes: AMAttributes, relationships: AMRelationships? = nil) {
+
+    public init(id: String, type: String, href: String? = nil, attributes: AMAttributes? = nil, relationships: AMRelationships? = nil) {
         self.id = id
         self.type = type
         self.href = href

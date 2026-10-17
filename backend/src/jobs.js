@@ -7,12 +7,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { parseAppleMusicUrl } from './urlParser.js';
 import { insertJob, getJob, getActiveJobByUrl, listJobs } from './db.js';
 import { enqueueJob, cancelJob } from './jobRunner.js';
+import { resolveDestination } from './destinations.js';
 
 export const jobsRouter = Router();
 
 // POST /jobs — Submit import job
 jobsRouter.post('/', (req, res) => {
-  const { url, name } = req.body || {};
+  const { url, name, destinationId } = req.body || {};
 
   const parsed = parseAppleMusicUrl(url);
   if (!parsed.valid) {
@@ -23,6 +24,19 @@ jobsRouter.post('/', (req, res) => {
         details: parsed.error
       }
     });
+  }
+
+  // Server-side destination id → absolute path (defaults when omitted).
+  let destination;
+  try {
+    destination = resolveDestination(destinationId);
+  } catch (err) {
+    if (err.code === 'INVALID_DESTINATION') {
+      return res.status(400).json({
+        error: { code: 'INVALID_DESTINATION', message: err.message }
+      });
+    }
+    throw err;
   }
 
   // Deduplication / active job check
@@ -47,6 +61,8 @@ jobsRouter.post('/', (req, res) => {
     state: 'queued',
     stage: 'resolving',
     progress_hint: 'Job enqueued',
+    destination_id: destination.id || null,
+    destination_path: destination.path,
     created_at: now,
     updated_at: now
   };

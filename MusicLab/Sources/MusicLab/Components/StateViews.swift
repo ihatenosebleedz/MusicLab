@@ -45,8 +45,7 @@ public struct EmptyStateView: View {
                         .padding(.horizontal, Spacing.lg)
                         .padding(.vertical, Spacing.sm)
                         .foregroundStyle(.white)
-                        .background(Theme.accent)
-                        .clipShape(Capsule())
+                        .tintedGlass(Theme.accent.opacity(0.85), in: Capsule())
                 }
                 .padding(.top, Spacing.sm)
             }
@@ -117,18 +116,12 @@ public struct ErrorBannerView: View {
                         .foregroundStyle(Theme.error)
                         .padding(.horizontal, Spacing.sm)
                         .padding(.vertical, Spacing.xs)
-                        .background(Theme.error.opacity(0.12))
-                        .clipShape(Capsule())
+                        .tintedGlass(Theme.error.opacity(0.3), in: Capsule())
                 }
             }
         }
         .padding(Spacing.md)
-        .background(Theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.md)
-                .stroke(Theme.error.opacity(0.3), lineWidth: 1)
-        )
+        .tintedGlass(Theme.error.opacity(0.4), in: RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
     }
 }
 
@@ -158,8 +151,7 @@ public struct BackendUnavailableCard: View {
                     .foregroundStyle(Theme.warning)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, 2)
-                    .background(Theme.warning.opacity(0.15))
-                    .clipShape(Capsule())
+                    .tintedGlass(Theme.warning.opacity(0.4), in: Capsule())
             }
             
             Text("Cannot reach Gentoo downloader backend at \(serverUrl). Check Tailscale connectivity or verify settings.")
@@ -177,11 +169,6 @@ public struct BackendUnavailableCard: View {
             .padding(.top, Spacing.xs)
         }
         .padding(Spacing.md)
-        .background(Theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.md)
-                .stroke(Theme.warning.opacity(0.3), lineWidth: 1)
-        )
+        .tintedGlass(Theme.warning.opacity(0.4), in: RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
     }
 }

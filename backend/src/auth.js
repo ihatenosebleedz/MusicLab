@@ -34,6 +34,18 @@ export function resetTokenCache() {
 }
 
 /**
+ * Best-effort access to the live secret, used only to redact it out of
+ * log responses. Returns null when the token is unavailable.
+ */
+export function peekToken() {
+  try {
+    return getTokenBuf().toString('utf8');
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Express middleware: rejects requests without a valid Bearer token.
  * Returns 401 with structured error on failure.
  */

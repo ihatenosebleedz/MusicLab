@@ -15,15 +15,28 @@ public struct ItemDetailView: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 // Artwork & Header
                 HStack(alignment: .top, spacing: Spacing.lg) {
-                    RoundedRectangle(cornerRadius: CornerRadius.lg)
-                        .fill(Theme.accentGradient)
+                    if let artworkUrl = item.artworkUrl, let url = URL(string: artworkUrl) {
+                        AsyncImage(url: url) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            RoundedRectangle(cornerRadius: CornerRadius.lg)
+                                .fill(Theme.accentGradient)
+                                .overlay(Image(systemName: item.type.iconName).font(.system(size: 44)).foregroundStyle(.white))
+                        }
                         .frame(width: 130, height: 130)
-                        .overlay(
-                            Image(systemName: item.type.iconName)
-                                .font(.system(size: 44))
-                                .foregroundStyle(.white)
-                        )
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.lg))
                         .shadow(color: Color.black.opacity(0.15), radius: 10, y: 5)
+                    } else {
+                        RoundedRectangle(cornerRadius: CornerRadius.lg)
+                            .fill(Theme.accentGradient)
+                            .frame(width: 130, height: 130)
+                            .overlay(
+                                Image(systemName: item.type.iconName)
+                                    .font(.system(size: 44))
+                                    .foregroundStyle(.white)
+                            )
+                            .shadow(color: Color.black.opacity(0.15), radius: 10, y: 5)
+                    }
                     
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(item.type.displayName.uppercased())
@@ -67,9 +80,9 @@ public struct ItemDetailView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.md)
                     .foregroundStyle(.white)
-                    .background(Theme.accentGradient)
-                    .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                    .tintedGlass(Theme.accent.opacity(0.85), in: RoundedRectangle(cornerRadius: CornerRadius.md, style: .continuous))
                     .shadow(color: Theme.accent.opacity(0.3), radius: 6, y: 3)
+                    
                 }
                 .disabled(appState.isSubmitting)
                 .padding(.horizontal)
@@ -128,8 +141,7 @@ public struct ItemDetailView: View {
                                 }
                             }
                         }
-                        .background(Theme.cardBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
+                        .cardSurface(cornerRadius: CornerRadius.md)
                         .padding(.horizontal)
                     }
                 }

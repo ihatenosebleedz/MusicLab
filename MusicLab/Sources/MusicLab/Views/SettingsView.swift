@@ -9,14 +9,14 @@ public struct SettingsView: View {
     public var body: some View {
         NavigationStack {
             Form {
-                // Section: Gentoo Backend Connection
+                // Section: Backend Connection
                 Section {
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text("Backend URL (Tailscale or LAN)")
                             .font(.caption)
                             .foregroundStyle(Theme.textSecondary)
                         
-                        TextField("http://gentoo.tail29a9cb.ts.net:3000", text: $appState.serverConfig.backendUrl)
+                        TextField("http://your-backend-host:3000", text: $appState.serverConfig.backendUrl)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
                             .keyboardType(.URL)
@@ -71,8 +71,7 @@ public struct SettingsView: View {
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, Spacing.sm)
                                     .padding(.vertical, Spacing.xs)
-                                    .background(Theme.accent)
-                                    .clipShape(Capsule())
+                                    .tintedGlass(Theme.accent.opacity(0.85), in: Capsule())
                             }
                         }
                         .disabled(appState.isCheckingServer)
@@ -82,7 +81,33 @@ public struct SettingsView: View {
                 } header: {
                     Text("Backend Server")
                 } footer: {
-                    Text("The backend runs on your Gentoo host (nbz), orchestrates amdl, and serves REST requests over Tailscale or LAN.")
+                    Text("The backend orchestrates amdl and serves REST requests over your network connection.")
+                }
+                
+                // Section: Download Destination
+                Section {
+                    if appState.destinations.isEmpty {
+                        Text(appState.isServerOnline
+                             ? "No destinations are configured on the server."
+                             : "Connect to the backend to load destinations.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.textSecondary)
+                    } else {
+                        Picker("Save downloads to", selection: Binding(
+                            get: { appState.selectedDestinationId },
+                            set: { appState.setDestination($0) }
+                        )) {
+                            Text("Server default").tag(String?.none)
+                            ForEach(appState.destinations) { destination in
+                                Text(destination.isDefault ? "\(destination.id) (default)" : destination.id)
+                                    .tag(String?.some(destination.id))
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Download Destination")
+                } footer: {
+                    Text("Choose which library on the server receives imports. \"Server default\" uses the server's configured destination.")
                 }
                 
                 // Section: Navidrome Music Server
@@ -92,7 +117,7 @@ public struct SettingsView: View {
                             .font(.caption)
                             .foregroundStyle(Theme.textSecondary)
                         
-                        TextField("https://gentoo.tail29a9cb.ts.net:4533", text: $appState.serverConfig.navidromeUrl)
+                        TextField("https://your-navidrome-host:4533", text: $appState.serverConfig.navidromeUrl)
                             .textInputAutocapitalization(.never)
                             .disableAutocorrection(true)
                             .keyboardType(.URL)
@@ -100,28 +125,101 @@ public struct SettingsView: View {
                 } header: {
                     Text("Navidrome Server")
                 } footer: {
-                    Text("Navidrome 0.64.2 monitors /mnt/media/Music. The app verifies that completed downloads are indexed in OpenSubsonic.")
+                    Text("Navidrome monitors your music folder. The app verifies that completed downloads are indexed in OpenSubsonic.")
                 }
                 
+                // Section: Appearance (accent picker)
+                Section {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text(appState.accentOption.label)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.accent)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: Spacing.md) {
+                                ForEach(AccentOption.allCases) { option in
+                                    Button {
+                                        appState.setAccent(option)
+                                    } label: {
+                                        ZStack {
+                                            Circle()
+                                                .fill(option.gradient)
+                                            if appState.accentOption == option {
+                                                Image(systemName: "checkmark")
+                                                    .font(.system(size: 14, weight: .bold))
+                                                    .foregroundStyle(.white)
+                                                    .shadow(color: .black.opacity(0.35), radius: 1, y: 1)
+                                            }
+                                        }
+                                        .frame(width: 36, height: 36)
+                                        .overlay(
+                                            Circle().strokeBorder(
+                                                appState.accentOption == option
+                                                    ? Theme.textPrimary
+                                                    : Color.clear,
+                                                lineWidth: 2
+                                            )
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(option.label)
+                                    .accessibilityValue(appState.accentOption == option ? "Selected" : "")
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, Spacing.xs)
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Sets the accent used for buttons, highlights, and gradients across the app.")
+                }
+
+                // Section: Notifications
+                Section {
+                    Toggle("Completion Notifications", isOn: Binding(
+                        get: { appState.notifyOnCompletion },
+                        set: { appState.setNotifyOnCompletion($0) }
+                    ))
+                } header: {
+                    Text("Notifications")
+                } footer: {
+                    Text("Sends an alert when an album, song, or playlist finishes downloading.")
+                }
+
                 // Section: System Architecture Info
                 Section("Infrastructure Summary") {
-                    LabeledContent("Downloader CLI", value: "amdl (Gentoo)")
-                    LabeledContent("Download Destination", value: "/mnt/media/Music")
+                    LabeledContent("Downloader CLI", value: "amdl")
+                    LabeledContent("Download Destination", value: appState.selectedDestinationLabel)
                     LabeledContent("Sidecar Files", value: "Cover Art + .lrc Lyrics")
                     LabeledContent("Verification Mode", value: "OpenSubsonic Polling")
-                    LabeledContent("Network Mode", value: "Tailscale + LAN (0.0.0.0)")
+                    LabeledContent("Network Mode", value: "LAN")
                 }
                 
                 // Section: App Metadata
-                Section("About") {
-                    LabeledContent("App Name", value: "Music Lab")
-                    LabeledContent("Version", value: "1.0.0")
+                Section {
+                    HStack(spacing: Spacing.md) {
+                        AppLogoView(size: 54)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Music Lab")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Version 1.0.0")
+                                .font(.caption)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                    }
+                    .padding(.vertical, Spacing.xs)
+                    
                     LabeledContent("Toolchain", value: "xtool (Linux / Darwin SDK 27.1)")
                     
                     Button("Save Configuration") {
                         appState.saveConfig()
                     }
                     .foregroundStyle(Theme.accent)
+                } header: {
+                    Text("About")
                 }
             }
             .navigationTitle("Settings")

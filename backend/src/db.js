@@ -30,6 +30,11 @@ db.exec(`
     state               TEXT NOT NULL,
     stage               TEXT,
     progress_hint       TEXT,
+    progress_percent    REAL,
+    progress_completed  INTEGER DEFAULT 0,
+    progress_total      INTEGER,
+    eta_seconds         INTEGER,
+    speed_text          TEXT,
     exit_code           INTEGER,
     stdout_tail         TEXT,
     stderr_tail         TEXT,
@@ -53,13 +58,45 @@ db.exec(`
   );
 `);
 
+// ── Migrations ───────────────────────────────────────────────────────────────
+
+function columnExists(table, column) {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all();
+  return rows.some((row) => row.name === column);
+}
+
+// Per-import destination (server-side id → path map); safe to re-run.
+if (!columnExists('jobs', 'destination_id')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN destination_id TEXT');
+}
+if (!columnExists('jobs', 'destination_path')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN destination_path TEXT');
+}
+
+// Live download progress (percent, songs done/total, ETA, throughput).
+if (!columnExists('jobs', 'progress_percent')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN progress_percent REAL');
+}
+if (!columnExists('jobs', 'progress_completed')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN progress_completed INTEGER DEFAULT 0');
+}
+if (!columnExists('jobs', 'progress_total')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN progress_total INTEGER');
+}
+if (!columnExists('jobs', 'eta_seconds')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN eta_seconds INTEGER');
+}
+if (!columnExists('jobs', 'speed_text')) {
+  db.exec('ALTER TABLE jobs ADD COLUMN speed_text TEXT');
+}
+
 // ── Prepared statements ──────────────────────────────────────────────────────
 
 const stmts = {
   insertJob: db.prepare(`
     INSERT INTO jobs (id, type, url, name, state, stage, progress_hint,
-                      created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                      destination_id, destination_path, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `),
 
   updateJob: db.prepare(`
@@ -67,6 +104,11 @@ const stmts = {
       state             = ?,
       stage             = ?,
       progress_hint     = ?,
+      progress_percent  = ?,
+      progress_completed = ?,
+      progress_total    = ?,
+      eta_seconds       = ?,
+      speed_text        = ?,
       exit_code         = ?,
       stdout_tail       = ?,
       stderr_tail       = ?,
@@ -142,6 +184,19 @@ const stmts = {
     WHERE state IN ('queued','resolving','downloading','processing',
                     'waiting_for_navidrome','verifying')
   `),
+
+  listJobLogRows: db.prepare(`
+    SELECT id, stdout_tail, stderr_tail, created_at, updated_at, started_at, finished_at
+    FROM jobs
+    ORDER BY updated_at DESC
+    LIMIT ?
+  `),
+
+  getJobLogRow: db.prepare(`
+    SELECT id, stdout_tail, stderr_tail, created_at, updated_at, started_at, finished_at
+    FROM jobs
+    WHERE id = ?
+  `),
 };
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -156,6 +211,8 @@ export function insertJob(job) {
     job.state,
     job.stage,
     job.progress_hint,
+    job.destination_id ?? null,
+    job.destination_path ?? null,
     job.created_at,
     job.updated_at
   );
@@ -170,6 +227,11 @@ export function updateJob(id, fields) {
     fields.state              ?? existing.state,
     fields.stage              ?? existing.stage,
     fields.progress_hint      ?? existing.progress_hint,
+    fields.progress_percent   ?? existing.progress_percent,
+    fields.progress_completed ?? existing.progress_completed,
+    fields.progress_total     ?? existing.progress_total,
+    fields.eta_seconds        ?? existing.eta_seconds,
+    fields.speed_text         ?? existing.speed_text,
     fields.exit_code          ?? existing.exit_code,
     fields.stdout_tail        ?? existing.stdout_tail,
     fields.stderr_tail        ?? existing.stderr_tail,
@@ -234,6 +296,16 @@ export function getActiveJobs() {
   return stmts.getActiveJobs.all();
 }
 
+/** Latest N jobs with their captured amdl output (for GET /logs). */
+export function listJobLogRows(limit = 500) {
+  return stmts.listJobLogRows.all(limit);
+}
+
+/** Single job's captured amdl output, or null if the job does not exist. */
+export function getJobLogRow(id) {
+  return stmts.getJobLogRow.get(id) ?? null;
+}
+
 // ── Hydration helpers ────────────────────────────────────────────────────────
 
 /** Convert snake_case DB row → camelCase API shape (full detail). */
@@ -247,9 +319,16 @@ function hydrateJob(row) {
     state:        row.state,
     stage:        row.stage,
     progressHint: row.progress_hint,
+    progressPercent:   row.progress_percent ?? null,
+    progressCompleted: row.progress_completed ?? 0,
+    progressTotal:     row.progress_total ?? null,
+    etaSeconds:        row.eta_seconds ?? null,
+    speedText:         row.speed_text ?? null,
     exitCode:     row.exit_code,
     stdoutTail:   row.stdout_tail,
     stderrTail:   row.stderr_tail,
+    destinationId:   row.destination_id,
+    destinationPath: row.destination_path,
     createdAt:    row.created_at,
     updatedAt:    row.updated_at,
     startedAt:    row.started_at,
@@ -265,6 +344,7 @@ function hydrateJob(row) {
 
 /** Convert snake_case DB row → camelCase API shape (list summary). */
 function hydrateJobSummary(row) {
+  const tracks = stmts.getTracksForJob.all(row.id);
   return {
     id:               row.id,
     type:             row.type,
@@ -273,12 +353,26 @@ function hydrateJobSummary(row) {
     state:            row.state,
     stage:            row.stage,
     progressHint:     row.progress_hint,
+    progressPercent:   row.progress_percent ?? null,
+    progressCompleted: row.progress_completed ?? 0,
+    progressTotal:     row.progress_total ?? null,
+    etaSeconds:        row.eta_seconds ?? null,
+    speedText:         row.speed_text ?? null,
+    exitCode:         row.exit_code,
+    stdoutTail:       row.stdout_tail,
+    stderrTail:       row.stderr_tail,
+    destinationId:    row.destination_id,
+    destinationPath:  row.destination_path,
     createdAt:        row.created_at,
     updatedAt:        row.updated_at,
-    addedTracksCount: row.added_tracks_count ?? 0,
+    startedAt:        row.started_at,
+    finishedAt:       row.finished_at,
+    addedTracksCount: row.added_tracks_count ?? tracks.length,
+    addedTracks:      tracks,
     navidrome: {
-      verified: !!row.navidrome_verified,
-      matches:  row.navidrome_matches,
+      verified:  !!row.navidrome_verified,
+      checkedAt: row.navidrome_checked_at,
+      matches:   row.navidrome_matches,
     },
   };
 }

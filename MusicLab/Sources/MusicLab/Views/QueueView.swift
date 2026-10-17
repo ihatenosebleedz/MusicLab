@@ -41,16 +41,35 @@ public struct QueueView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 .padding(.vertical, Spacing.sm)
-                .background(Theme.background)
                 
-                if filteredJobs.isEmpty {
-                    EmptyStateView(
-                        iconName: "arrow.down.circle",
-                        title: "No Jobs in Queue",
-                        message: selectedFilter == .all
-                            ? "Your download queue is empty. Search for music to import."
-                            : "No jobs matching filter '\(selectedFilter.rawValue)'."
-                    )
+                if appState.isLoadingJobs && filteredJobs.isEmpty {
+                    List {
+                        ForEach(0..<4, id: \.self) { _ in
+                            SkeletonJobRow()
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollDisabled(true)
+                } else if filteredJobs.isEmpty {
+                    if !appState.isServerOnline {
+                        EmptyStateView(
+                            iconName: "server.rack",
+                            title: "Not Connected",
+                            message: "Connect to your server to view your download queue.",
+                            actionTitle: "Configure Connection",
+                            action: {
+                                appState.selectedTab = .settings
+                            }
+                        )
+                    } else {
+                        EmptyStateView(
+                            iconName: "arrow.down.circle",
+                            title: "No Jobs in Queue",
+                            message: selectedFilter == .all
+                                ? "Your download queue is empty. Search for music to import."
+                                : "No jobs matching filter '\(selectedFilter.rawValue)'."
+                        )
+                    }
                 } else {
                     List {
                         ForEach(filteredJobs) { job in
@@ -78,8 +97,11 @@ public struct QueueView: View {
                                         StageLadderView(job: job)
                                             .padding(.top, 2)
                                     }
-                                    
-                                    if let hint = job.progressHint {
+
+                                    if job.state.isActive && (job.progressPercent != nil || job.speedText != nil) {
+                                        DownloadProgressView(job: job)
+                                            .padding(.top, 2)
+                                    } else if let hint = job.progressHint {
                                         Text(hint)
                                             .font(.caption)
                                             .foregroundStyle(Theme.accent)

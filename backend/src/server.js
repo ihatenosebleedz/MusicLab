@@ -7,6 +7,8 @@ import { config } from './config.js';
 import { requireAuth } from './auth.js';
 import { healthRouter } from './health.js';
 import { jobsRouter } from './jobs.js';
+import { logsRouter } from './logs.js';
+import { destinationsRouter } from './destinations.js';
 import { catalogRouter } from './catalog.js';
 import { recoverActiveJobs } from './jobRunner.js';
 
@@ -21,6 +23,8 @@ export function createApp() {
   // Authenticated routes
   app.use('/catalog', requireAuth, catalogRouter);
   app.use('/jobs', requireAuth, jobsRouter);
+  app.use('/logs', requireAuth, logsRouter);
+  app.use('/destinations', requireAuth, destinationsRouter);
 
   // Fallback 404 handler
   app.use((req, res) => {

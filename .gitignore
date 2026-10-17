@@ -1,6 +1,24 @@
+# OS & editors
 .DS_Store
+*.swp
+*~
+
+# iOS build artifacts
 *.ipa
 *.app
 .build/
 xtool/
 .bsp/
+MusicLab/.build/
+MusicLab/xtool/
+MusicLab/build/
+Builds/*.ipa
+
+# Backend data & secrets
+backend/node_modules/
+backend/data/*.db
+backend/data/*.secret
+backend/data/*.db-journal
+*.log
+.env
+data/

@@ -8,7 +8,7 @@ import { getAnonymousAmpToken } from './ampToken.js';
 export const catalogRouter = Router();
 
 catalogRouter.get('/search', async (req, res) => {
-  const { term, types = 'albums,songs', storefront = 'us', limit = '20' } = req.query;
+  const { term, types = 'albums,songs,playlists,artists', storefront = 'us', limit = '20' } = req.query;
 
   if (!term || typeof term !== 'string' || !term.trim()) {
     return res.status(400).json({
@@ -49,7 +49,9 @@ catalogRouter.get('/search', async (req, res) => {
     const data = await response.json();
     const results = {
       albums: [],
-      songs: []
+      songs: [],
+      playlists: [],
+      artists: []
     };
 
     if (data.results?.albums?.data) {
@@ -81,6 +83,36 @@ catalogRouter.get('/search', async (req, res) => {
         albumName: item.attributes?.albumName || '',
         appleMusicUrl: item.attributes?.url || `https://music.apple.com/${storefront}/song/${item.id}`,
         durationInMillis: item.attributes?.durationInMillis || 0
+      }));
+    }
+
+    if (data.results?.playlists?.data) {
+      results.playlists = data.results.playlists.data.map(item => ({
+        id: item.id,
+        type: 'playlist',
+        title: item.attributes?.name || '',
+        artistName: item.attributes?.curatorName || '',
+        releaseDate: item.attributes?.releaseDate || '',
+        artworkUrl: item.attributes?.artwork?.url
+          ? item.attributes.artwork.url.replace('{w}', '600').replace('{h}', '600')
+          : '',
+        trackCount: item.attributes?.trackCount || 0,
+        appleMusicUrl: item.attributes?.url || `https://music.apple.com/${storefront}/playlist/${item.id}`,
+        genre: item.attributes?.genreNames?.[0] || ''
+      }));
+    }
+
+    if (data.results?.artists?.data) {
+      results.artists = data.results.artists.data.map(item => ({
+        id: item.id,
+        type: 'artist',
+        title: item.attributes?.name || '',
+        artistName: item.attributes?.artistName || '',
+        artworkUrl: item.attributes?.artwork?.url
+          ? item.attributes.artwork.url.replace('{w}', '600').replace('{h}', '600')
+          : '',
+        appleMusicUrl: item.attributes?.url || `https://music.apple.com/${storefront}/artist/${item.id}`,
+        genre: item.attributes?.genreNames?.[0] || ''
       }));
     }
 

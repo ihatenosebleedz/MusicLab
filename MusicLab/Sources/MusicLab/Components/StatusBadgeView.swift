@@ -19,11 +19,8 @@ public struct StatusBadgeView: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs)
         .foregroundStyle(state.color)
-        .background(state.color.opacity(0.14))
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(state.color.opacity(0.3), lineWidth: 1)
-        )
+        .tintedGlass(state.color.opacity(0.6), in: Capsule())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Status: \(state.displayName)")
     }
 }

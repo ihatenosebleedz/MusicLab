@@ -1,2 +1,4 @@
 version: 1
 bundleID: com.example.MusicLab
+infoPath: Resources/Info.plist
+iconPath: Resources/AppIcon.png

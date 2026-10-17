@@ -134,6 +134,11 @@ public struct Job: Identifiable, Codable, Hashable, Sendable {
     public var state: JobState
     public var stage: JobStage?
     public var progressHint: String?
+    public var progressPercent: Double?
+    public var progressCompleted: Int?
+    public var progressTotal: Int?
+    public var etaSeconds: Int?
+    public var speedText: String?
     public let createdAt: Date
     public var updatedAt: Date
     public var startedAt: Date?
@@ -153,6 +158,11 @@ public struct Job: Identifiable, Codable, Hashable, Sendable {
         state: JobState,
         stage: JobStage? = nil,
         progressHint: String? = nil,
+        progressPercent: Double? = nil,
+        progressCompleted: Int? = nil,
+        progressTotal: Int? = nil,
+        etaSeconds: Int? = nil,
+        speedText: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         startedAt: Date? = nil,
@@ -171,6 +181,11 @@ public struct Job: Identifiable, Codable, Hashable, Sendable {
         self.state = state
         self.stage = stage
         self.progressHint = progressHint
+        self.progressPercent = progressPercent
+        self.progressCompleted = progressCompleted
+        self.progressTotal = progressTotal
+        self.etaSeconds = etaSeconds
+        self.speedText = speedText
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.startedAt = startedAt
@@ -181,5 +196,22 @@ public struct Job: Identifiable, Codable, Hashable, Sendable {
         self.addedTracks = addedTracks
         self.navidrome = navidrome
         self.error = error
+    }
+}
+
+extension Job {
+    /// Whether a live percentage bar should be shown.
+    public var showsDownloadProgress: Bool {
+        state == .downloading && progressPercent != nil
+    }
+
+    /// Human ETA, e.g. "2m 10s left".
+    public var etaText: String? {
+        guard let eta = etaSeconds, eta >= 0 else { return nil }
+        if eta < 60 { return "\(eta)s left" }
+        let m = eta / 60
+        let rem = eta % 60
+        if m < 60 { return rem == 0 ? "\(m)m left" : "\(m)m \(rem)s left" }
+        return "\(m / 60)h \(m % 60)m left"
     }
 }

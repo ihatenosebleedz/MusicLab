@@ -14,7 +14,7 @@
 | --- | --- | --- |
 | Dev box | Void Linux, `/home/nbz/Projects/apple-music-ios-downloader` | xtool + Swift 6.4.1 toolchain |
 | Device | User's iPhone (`iphone182` on Tailscale) | Required for on-device UX tests |
-| Real server | Gentoo `192.168.4.64` / `100.116.177.77` (`gentoo`) | Runs `amdl` + Navidrome 0.64.2; **live library** |
+| Real server | Gentoo `192.168.1.100` / `100.x.y.z` (`gentoo`) | Runs `amdl` + Navidrome 0.64.2; **live library** |
 
 ### PATH note
 `swift`/`xtool` require the Swift toolchain on PATH. Non-interactive shells do

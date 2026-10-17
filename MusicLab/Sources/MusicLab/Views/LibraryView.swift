@@ -34,31 +34,50 @@ public struct LibraryView: View {
                             
                             Spacer()
                             
+                            // Honest backend connection status (not a fabricated Navidrome claim)
                             HStack(spacing: 4) {
-                                Circle()
-                                    .fill(Theme.success)
-                                    .frame(width: 8, height: 8)
-                                Text("Ready")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Theme.success)
+                                if appState.isCheckingServer {
+                                    ProgressView().tint(Theme.info)
+                                    Text("Checking")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Theme.info)
+                                } else if appState.isServerOnline {
+                                    Circle()
+                                        .fill(Theme.success)
+                                        .frame(width: 8, height: 8)
+                                    Text("Connected")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Theme.success)
+                                } else {
+                                    Circle()
+                                        .fill(Theme.warning)
+                                        .frame(width: 8, height: 8)
+                                    Text("Offline")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(Theme.warning)
+                                }
                             }
                             .padding(.horizontal, Spacing.sm)
                             .padding(.vertical, 4)
-                            .background(Theme.success.opacity(0.12))
-                            .clipShape(Capsule())
+                            .tintedGlass(
+                                (appState.isServerOnline && !appState.isCheckingServer
+                                    ? Theme.success.opacity(0.4)
+                                    : Theme.warning.opacity(0.4)),
+                                in: Capsule()
+                            )
                         }
                         
                         Divider()
                             .padding(.vertical, Spacing.xs)
                         
                         HStack {
-                            Text("Auto-discovery active on /mnt/media/Music")
+                            Text("Verified via backend → OpenSubsonic")
                                 .font(.caption)
                                 .foregroundStyle(Theme.textTertiary)
                             
                             Spacer()
                             
-                            if let navidromeUrl = URL(string: appState.serverConfig.navidromeUrl) {
+                            if let navidromeUrl = URL(string: appState.serverConfig.navidromeUrl), !appState.serverConfig.navidromeUrl.isEmpty {
                                 Link(destination: navidromeUrl) {
                                     HStack(spacing: 2) {
                                         Text("Open Web UI")
@@ -79,16 +98,37 @@ public struct LibraryView: View {
                             .foregroundStyle(Theme.textPrimary)
                             .padding(.horizontal)
                         
-                        if verifiedJobs.isEmpty {
-                            EmptyStateView(
-                                iconName: "music.note.list",
-                                title: "No Imports Verified Yet",
-                                message: "When download jobs complete and are verified in Navidrome, they will appear here.",
-                                actionTitle: "Go to Discover",
-                                action: {
-                                    appState.selectedTab = .discover
+                    if verifiedJobs.isEmpty && appState.isLoadingJobs && appState.isServerOnline {
+                        VStack(spacing: Spacing.sm) {
+                            ForEach(0..<3, id: \.self) { _ in
+                                MusicCard {
+                                    SkeletonMediaRow()
                                 }
-                            )
+                            }
+                        }
+                        .padding(.horizontal)
+                    } else if verifiedJobs.isEmpty {
+                        if !appState.isServerOnline {
+                                EmptyStateView(
+                                    iconName: "server.rack",
+                                    title: "Not Connected",
+                                    message: "Connect to your server in Settings to view your library and verified imports.",
+                                    actionTitle: "Configure Connection",
+                                    action: {
+                                        appState.selectedTab = .settings
+                                    }
+                                )
+                            } else {
+                                EmptyStateView(
+                                    iconName: "music.note.list",
+                                    title: "No Imports Verified Yet",
+                                    message: "When download jobs complete and are verified in Navidrome, they will appear here.",
+                                    actionTitle: "Go to Search",
+                                    action: {
+                                        appState.selectedTab = .search
+                                    }
+                                )
+                            }
                         } else {
                             VStack(spacing: Spacing.sm) {
                                 ForEach(verifiedJobs) { job in

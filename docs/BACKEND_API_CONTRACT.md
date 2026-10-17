@@ -7,7 +7,7 @@
 
 ## 1. Service Architecture & Networking
 
-- **Host:** Gentoo Linux (`192.168.4.64` LAN, `100.116.177.77` Tailscale, hostname `gentoo`).
+- **Host:** Gentoo Linux (`192.168.1.100` LAN, `100.x.y.z` Tailscale, hostname `gentoo`).
 - **Runtime:** Node.js v26.3.0 (`npm` 11.16.0).
 - **Service Deployment:** `/home/nbz/musiclab-backend`, executed as user `nbz`.
 - **Binding:** `0.0.0.0:3000` (accessible over Tailscale and local 192.168.4.x LAN).
@@ -101,11 +101,13 @@ Submits a new import job.
 ```json
 {
   "url": "https://music.apple.com/us/album/gnx/1781290351",
-  "name": "Kendrick Lamar — GNX"
+  "name": "Kendrick Lamar — GNX",
+  "destinationId": "elijah"
 }
 ```
 - **Validation:**
   - `url` must parse successfully against `AppleMusicURL` schema (`https://music.apple.com/{storefront}/{type}/...`).
+  - `destinationId` (optional) must exist in the server-side `DESTINATIONS` map; otherwise HTTP 400 `INVALID_DESTINATION`. When omitted, the server's `DEFAULT_DESTINATION` is used. When the map is unconfigured, amdl's own config folder is used (legacy).
   - If a job for the identical URL is already active (`queued`, `downloading`, `verifying`), the existing job is returned with HTTP 409 Conflict (or existing job status).
 - **Response 201 Created:**
 ```json
@@ -117,6 +119,8 @@ Submits a new import job.
   "state": "queued",
   "stage": "resolving",
   "progressHint": "Job enqueued",
+  "destinationId": "elijah",
+  "destinationPath": "/mnt/media/Music/Elijah's Library",
   "createdAt": "2026-10-13T21:40:00.000Z",
   "updatedAt": "2026-10-13T21:40:00.000Z",
   "addedTracks": []
@@ -143,7 +147,12 @@ Lists import jobs.
       "name": "Kendrick Lamar — GNX",
       "state": "verifying",
       "stage": "verifying",
-      "progressHint": "Waiting for Navidrome auto-discovery (attempt 2/10)",
+      "progressHint": "Downloading track 30 of 36 • 11 MB/s • ~2s left",
+      "progressPercent": 80.6,
+      "progressCompleted": 29,
+      "progressTotal": 36,
+      "etaSeconds": 2,
+      "speedText": "11 MB/s",
       "createdAt": "2026-10-13T21:35:00.000Z",
       "updatedAt": "2026-10-13T21:38:00.000Z",
       "addedTracksCount": 12,
@@ -155,6 +164,13 @@ Lists import jobs.
   ]
 }
 ```
+
+> **Live progress fields.** While a job downloads, the runner streams amdl's
+> stdout and fills `progressPercent` (0–100), `progressCompleted` /
+> `progressTotal` (songs for playlists, tracks for a single album),
+> `etaSeconds` (estimated from the observed download rate) and `speedText`
+> (e.g. `"11 MB/s"`). They are `null`/`0` before the first download signal and
+> `progressPercent` is `100` once processing finishes.
 
 ---
 
@@ -213,7 +229,51 @@ Cancels an active job.
 
 ---
 
-### 3.7 Error Response Format
+### 3.7 `GET /destinations`
+Lists the server-side import destinations. **Auth:** required.
+
+```json
+{
+  "destinations": [
+    { "id": "bryon", "isDefault": true },
+    { "id": "elijah", "isDefault": false }
+  ],
+  "defaultId": "bryon"
+}
+```
+- Paths are never returned; clients only see opaque ids. Configured via the
+  server `.env` (`DESTINATIONS` JSON map, `DEFAULT_DESTINATION`).
+
+---
+
+### 3.8 `GET /logs`
+Authenticated, paginated, redacted log aggregation.
+
+- **Auth:** Required
+- **Query Parameters:**
+  - `source` (optional): `all` (default) | `backend` | `job` | `wrapper`.
+  - `jobId` (optional): scopes the result to a single job's amdl output (overrides `source`).
+  - `limit` (optional, default `100`, max `500`); `offset` (optional, default `0`).
+- **Errors:** 400 `INVALID_SOURCE`; 404 `JOB_NOT_FOUND` (unknown `jobId`).
+- **Response 200 OK:**
+```json
+{
+  "logs": [
+    { "source": "job", "jobId": "c1f77d8a-...", "stream": "stdout", "at": "2026-10-16T05:00:00.000Z", "line": "Downloading track: ..." },
+    { "source": "backend", "stream": "service", "at": "2026-10-16T05:00:00.000Z", "line": "server started" }
+  ],
+  "page": { "limit": 100, "offset": 0, "total": 2, "hasMore": false },
+  "available": { "backend": true, "job": true, "wrapper": false }
+}
+```
+- **Redaction:** every line passes through `redact()` — Bearer tokens,
+  `name=value` / `name: value` credential shapes, and the exact live secrets
+  (Navidrome password/token, backend bearer) are masked as `[REDACTED]`.
+- `backend` / `wrapper` sources require `LOG_FILE` / `WRAPPER_LOG_FILE` to be set.
+
+---
+
+### 3.9 Error Response Format
 All errors return a consistent RFC-7807 inspired envelope:
 ```json
 {
@@ -237,13 +297,26 @@ Standard error codes:
 ## 4. `amdl` Subprocess Execution Contract
 
 ### 4.1 Working Directory and Invocation
-- **CWD:** `/home/nbz/apple-music-downloader`
-- **Binary:** `./amdl`
+- **Binary:** `./amdl` (resolved against the amdl repo dir, default
+  `/home/nbz/apple-music-downloader`).
 - **Execution Arguments:**
   ```bash
   ./amdl --json "<apple-music-url>"
   ```
-  *(Note: There is no `--url` flag; `<url>` is passed as a positional argument. The `--json` flag causes `amdl` to emit the JSON summary on completion).*
+  *(Note: There is no `--url` flag; `<url>` is passed as a positional argument.
+  `--json` emits the JSON summary on completion. There is also no destination /
+  output flag.)*
+- **CWD / save folder:** `amdl` reads `config.yaml` from its **current working
+  directory** (`internal/app/config.go: os.ReadFile("config.yaml")`) and has no
+  destination flag. So the only way to steer the save folder per import is the
+  CWD:
+  - No destination ⇒ run from the amdl repo dir (legacy behaviour).
+  - With a destination (Step 8) ⇒ the backend generates a per-destination dir
+    (`data/destinations/<hash>/`) containing a copy of the real config with
+    **only** `alac/atmos/aac-save-folder` rewritten to the destination path
+    (credentials and all other settings preserved), plus a copy of
+    `config.yaml.example`, and spawns `amdl` from there. A destination that
+    cannot be materialised fails the job rather than writing to the wrong folder.
 
 ### 4.2 Process Group & Cancellation
 - The process is spawned with `{ detached: true }` so it heads its own process group (`pgid = child.pid`).

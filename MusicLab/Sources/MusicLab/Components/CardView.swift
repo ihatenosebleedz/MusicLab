@@ -12,11 +12,6 @@ public struct MusicCard<Content: View>: View {
             content
         }
         .padding(Spacing.md)
-        .background(Theme.cardBackground)
-        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.md))
-        .overlay(
-            RoundedRectangle(cornerRadius: CornerRadius.md)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
-        )
+        .cardSurface(cornerRadius: CornerRadius.md)
     }
 }
