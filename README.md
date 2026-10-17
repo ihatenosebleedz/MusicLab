@@ -1,4 +1,4 @@
-# 🎵 MusicLab
+# MusicLab
 
 > **A native iOS client and self-hosted backend pipeline to download songs, albums, and playlists from Apple Music straight into your personal Navidrome library with a single tap from the iOS Share Sheet.**
 
@@ -15,7 +15,7 @@
 
 ---
 
-## 🎬 Demo Workflow
+## Demo Workflow
 
 <p align="center">
   <img src="docs/assets/demo.gif" width="300" alt="MusicLab Demo Workflow">
@@ -35,18 +35,18 @@
 
 ---
 
-## ✨ Features
+## Features
 
-- ⚡️ **Native iOS Share Sheet Integration:** Share directly from Apple Music using a lightweight iOS Shortcut deep link (`musiclab://import?url=...`). No manual copy-pasting required.
-- 📊 **Real-Time Download Tracking:** Parses downloader stdout live to provide track numbers (`Track x of N`), decryption percent, live throughput, and ETA countdown.
-- 🎼 **Smart Ordered Playlists:** Automatically resolves public Apple Music playlists, downloads catalog songs into proper artist/album directories, and writes an order-preserving `.m3u8` playlist for Navidrome.
-- 📁 **Multi-Library Destination Steering:** Switch between library targets (e.g. `Bryon's Library`, `Elijah's Library`) directly inside app Settings or per import.
-- 🎨 **Sleek SwiftUI Design System:** Dark-mode native interface with custom accent color picker (Apple Music Red, Purple, Cyan, Mint, Orange, Pride), card surfaces, and tactile haptics.
-- 🐧 **Built 100% on Linux:** No Mac, Xcode, or Apple Developer hardware needed to develop or build. Compiled using Swift Package Manager and `xtool`.
+- **Native iOS Share Sheet Integration:** Share directly from Apple Music using a lightweight iOS Shortcut deep link (`musiclab://import?url=...`). No manual copy-pasting required.
+- **Real-Time Download Tracking:** Parses downloader stdout live to provide track numbers (`Track x of N`), decryption percent, live throughput, and ETA countdown.
+- **Smart Ordered Playlists:** Automatically resolves public Apple Music playlists, downloads catalog songs into proper artist/album directories, and writes an order-preserving `.m3u8` playlist for Navidrome.
+- **Multi-Library Destination Steering:** Switch between library targets (e.g. `Bryon's Library`, `Elijah's Library`) directly inside app Settings or per import.
+- **Sleek SwiftUI Design System:** Dark-mode native interface with custom accent color picker (Apple Music Red, Purple, Cyan, Mint, Orange, Pride), card surfaces, and tactile haptics.
+- **Built 100% on Linux:** No Mac, Xcode, or Apple Developer hardware needed to develop or build. Compiled using Swift Package Manager and `xtool`.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Set Up the Backend
 The backend runs on your server or home-lab host alongside Navidrome:
@@ -59,7 +59,7 @@ cp .env.example .env
 # Edit .env with your paths, then:
 npm start
 ```
-📖 **Detailed guide:** See the [Self-Hosting Setup Guide](docs/SETUP_GUIDE.md) for step-by-step instructions (systemd/OpenRC services, `amdl` CLI, DRM helpers, and Navidrome integration).
+**Detailed guide:** See the [Self-Hosting Setup Guide](docs/SETUP_GUIDE.md) for step-by-step instructions (systemd/OpenRC services, `amdl` CLI, DRM helpers, and Navidrome integration).
 
 ### 2. Install the iOS App
 1. Download the latest `MusicLab.ipa` from [GitHub Releases](https://github.com/ihatenosebleedz/MusicLab/releases).
@@ -101,7 +101,7 @@ flowchart TD
 
 ---
 
-## 💻 Building the iOS App on Linux (No Mac Needed!)
+## Building the iOS App on Linux (No Mac Needed!)
 
 MusicLab is engineered to build natively on Linux using `xtool`:
 
@@ -124,7 +124,7 @@ cp -R xtool/MusicLab.app /tmp/payload/Payload/
 
 ---
 
-## 🔒 Security & Privacy
+## Security & Privacy
 
 - **Zero Cloud Intermediaries:** All communication is directly between your personal iPhone and your self-hosted backend over your local LAN or secure Tailscale network.
 - **Timing-Safe Auth:** The backend enforces constant-time Bearer token verification.
@@ -132,7 +132,7 @@ cp -R xtool/MusicLab.app /tmp/payload/Payload/
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 Apple Music is a trademark of Apple Inc. MusicLab is an independent open-source tool for personal home-lab media server integration.
