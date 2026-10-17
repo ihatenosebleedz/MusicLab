@@ -1,10 +1,10 @@
-# 🛠 MusicLab Self-Hosting & Backend Setup Guide
+# MusicLab Self-Hosting & Backend Setup Guide
 
 This guide walks you through setting up the complete MusicLab ecosystem on your self-hosted Linux server (Ubuntu, Debian, Gentoo, Arch, Fedora, etc.).
 
 ---
 
-## 🏗 Architecture Overview
+## Architecture Overview
 
 The system consists of 4 lightweight components working together on your server:
 
@@ -15,7 +15,7 @@ The system consists of 4 lightweight components working together on your server:
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Linux Server:** Any x86_64 or ARM64 Linux host (Ubuntu/Debian/Arch/Gentoo/Fedora).
 - **Node.js:** v22.0.0 or newer (`node -v`).
@@ -67,7 +67,7 @@ The system consists of 4 lightweight components working together on your server:
 1. Clone the MusicLab repository:
    ```bash
    cd ~
-   git clone https://github.com/<your-username>/MusicLab.git
+   git clone https://github.com/ihatenosebleedz/MusicLab.git
    cd MusicLab/backend
    ```
 
