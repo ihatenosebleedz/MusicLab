@@ -22,3 +22,8 @@ backend/data/*.db-journal
 *.log
 .env
 data/
+
+# Scratch & status files
+todo.md
+PROJECT_STATUS.md
+
