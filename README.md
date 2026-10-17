@@ -47,7 +47,7 @@
 ### 1. Set Up the Backend
 The backend runs on your server or home-lab host alongside Navidrome:
 ```bash
-git clone https://github.com/<your-username>/MusicLab.git
+git clone https://github.com/ihatenosebleedz/MusicLab.git
 cd MusicLab/backend
 npm install
 npm run generate-token
