@@ -3,7 +3,7 @@
 > **A native iOS client and self-hosted backend pipeline to download songs, albums, and playlists from Apple Music straight into your personal Navidrome library with a single tap from the iOS Share Sheet.**
 
 <p align="center">
-  <img src="MusicLab/Resources/AppIcon.png" width="128" height="128" alt="MusicLab App Icon" style="border-radius: 28px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+  <img src="docs/assets/AppIcon-Rounded.png" width="128" height="128" alt="MusicLab App Icon">
 </p>
 
 <p align="center">
